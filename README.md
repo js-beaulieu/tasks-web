@@ -31,8 +31,24 @@ pnpm install
 
 ### Compile and Hot-Reload for Development
 
+Start the local API (Postgres + `tasks-api:latest` Docker container):
+
+```sh
+pnpm dev:api
+```
+
+Then run the Vite dev server:
+
 ```sh
 pnpm dev
+```
+
+Vite proxies `/api` to `http://localhost:8080` and injects dev identity headers (`X-User-ID`, `X-User-Name`, `X-User-Email`) so the API can create a local user without the full home-stack gateway.
+
+To stop the API containers:
+
+```sh
+pnpm dev:api:down
 ```
 
 ### Type-Check, Compile and Minify for Production

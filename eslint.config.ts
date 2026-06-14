@@ -17,10 +17,23 @@ export default defineConfigWithVueTs(
     files: ['**/*.{vue,ts,mts,tsx}'],
   },
 
-  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
+  globalIgnores([
+    '**/dist/**',
+    '**/dist-ssr/**',
+    '**/coverage/**',
+  ]),
 
   ...pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
+
+  {
+    name: 'app/shadcn-ui-components',
+    files: ['src/components/ui/**/*.vue'],
+    rules: {
+      // Generated shadcn components use single-word names like Button, Card.
+      'vue/multi-word-component-names': 'off',
+    },
+  },
 
   {
     ...pluginPlaywright.configs['flat/recommended'],

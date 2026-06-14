@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tasks-web-postgres
+    environment:
+      POSTGRES_DB: tasks_api
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - tasks_api_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tasks_api"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - tasks-api
+
+  tasks-api:
+    build:
+      context: ../tasks-api
+      dockerfile: Dockerfile
+    image: tasks-api:latest
+    container_name: tasks-web-tasks-api
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      PG_CONNECTION_STRING: "postgres://postgres:postgres@postgres:5432/tasks_api?sslmode=disable"
+      LOG_FORMAT: "text"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tasks-api
+
+volumes:
+  tasks_api_postgres_data:
+
+networks:
+  tasks-api:
