@@ -14,13 +14,13 @@ export function useUsersByID(userIDs: MaybeRef<string[]>) {
     return deduped
   })
 
-  return useQuery({
-    queryKey: computed(() => ['users', 'by-id', normalized.value]),
+  return useQuery(() => ({
+    queryKey: ['users', 'by-id', normalized.value],
     queryFn: async (): Promise<UsersByIDMap> => {
       const users = await getUsersByIDs(normalized.value)
       return keyBy(users, (user) => user.id)
     },
-    enabled: computed(() => normalized.value.length > 0),
-    initialData: {} as UsersByIDMap,
-  })
+    enabled: normalized.value.length > 0,
+    placeholderData: {} as UsersByIDMap,
+  }))
 }

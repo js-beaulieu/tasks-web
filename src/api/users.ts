@@ -7,8 +7,25 @@ export interface User {
   createdAt: string
 }
 
+interface ApiUser {
+  id: string
+  name: string
+  email: string
+  created_at: string
+}
+
+function fromApiUser(user: ApiUser): User {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    createdAt: user.created_at,
+  }
+}
+
 export async function getMe(): Promise<User> {
-  return apiClient<User>('users/me')
+  const user = await apiClient<ApiUser>('users/me')
+  return fromApiUser(user)
 }
 
 export async function getUsersByIDs(ids: string[]): Promise<User[]> {
@@ -20,10 +37,12 @@ export async function getUsersByIDs(ids: string[]): Promise<User[]> {
   for (const id of ids) {
     params.append('ids', id)
   }
-  return apiList<User>(`users?${params.toString()}`)
+  const users = await apiList<ApiUser>(`users?${params.toString()}`)
+  return users.map(fromApiUser)
 }
 
 export async function searchUsers(query: string, limit = 20): Promise<User[]> {
   const params = new URLSearchParams({ search: query, limit: String(limit) })
-  return apiList<User>(`users?${params.toString()}`)
+  const users = await apiList<ApiUser>(`users?${params.toString()}`)
+  return users.map(fromApiUser)
 }

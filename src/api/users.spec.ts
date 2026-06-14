@@ -19,14 +19,23 @@ const mockUser = (partial: Partial<User> = {}): User => ({
   ...partial,
 })
 
+function mockApiUser(partial: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: 'u1',
+    name: 'Alice',
+    email: 'alice@example.com',
+    created_at: '2026-01-01T00:00:00Z',
+    ...partial,
+  }
+}
+
 describe('getMe', () => {
-  it('returns the current user', async () => {
-    const user = mockUser()
-    vi.mocked(apiClient).mockResolvedValue(user)
+  it('returns the current user mapped from API shape', async () => {
+    vi.mocked(apiClient).mockResolvedValue(mockApiUser())
 
     const result = await getMe()
 
-    expect(result).toEqual(user)
+    expect(result).toEqual(mockUser())
   })
 })
 
@@ -38,14 +47,19 @@ describe('getUsersByIDs', () => {
     expect(apiList).not.toHaveBeenCalled()
   })
 
-  it('requests users by repeated ids query params', async () => {
-    const users = [mockUser(), mockUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' })]
-    vi.mocked(apiList).mockResolvedValue(users)
+  it('requests users by repeated ids query params and maps response', async () => {
+    vi.mocked(apiList).mockResolvedValue([
+      mockApiUser(),
+      mockApiUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' }),
+    ])
 
     const result = await getUsersByIDs(['u1', 'u2'])
 
     expect(apiList).toHaveBeenCalledWith('users?ids=u1&ids=u2')
-    expect(result).toEqual(users)
+    expect(result).toEqual([
+      mockUser(),
+      mockUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' }),
+    ])
   })
 
   it('encodes IDs in query params', async () => {
@@ -60,8 +74,7 @@ describe('getUsersByIDs', () => {
   })
 
   it('preserves duplicate IDs in the request', async () => {
-    const user = mockUser()
-    vi.mocked(apiList).mockResolvedValue([user])
+    vi.mocked(apiList).mockResolvedValue([mockApiUser()])
 
     await getUsersByIDs(['u1', 'u1', 'u2'])
 
@@ -73,13 +86,12 @@ describe('getUsersByIDs', () => {
 
 describe('searchUsers', () => {
   it('searches users with a query and default limit', async () => {
-    const users = [mockUser({ id: 'u2', name: 'Bob' })]
-    vi.mocked(apiList).mockResolvedValue(users)
+    vi.mocked(apiList).mockResolvedValue([mockApiUser({ id: 'u2', name: 'Bob' })])
 
     const result = await searchUsers('bob')
 
     expect(apiList).toHaveBeenCalledWith('users?search=bob&limit=20')
-    expect(result).toEqual(users)
+    expect(result).toEqual([mockUser({ id: 'u2', name: 'Bob' })])
   })
 
   it('allows overriding the limit', async () => {

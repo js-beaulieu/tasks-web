@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, type Mock, beforeEach } from 'vitest'
-import { apiClient, apiList, ApiError } from './client'
+import { apiClient, apiList, ApiError, TimeoutError } from './client'
 
 function mockFetch(response: object): Mock<() => Promise<object>> {
   return vi.fn<() => Promise<object>>().mockResolvedValue(response)
@@ -185,6 +185,53 @@ describe('apiClient', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     await expect(apiClient('users/me')).rejects.toThrow('HTTP 500: Internal Server Error')
+  })
+
+  it('throws TimeoutError when request exceeds timeout', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', (_url: string, init: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+      }),
+    )
+
+    const promise = apiClient('users/me', { timeout: 5000 })
+    vi.advanceTimersByTime(5000)
+
+    await expect(promise).rejects.toBeInstanceOf(TimeoutError)
+    vi.useRealTimers()
+  })
+
+  it('allows overriding timeout per request', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', (_url: string, init: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+      }),
+    )
+
+    const promise = apiClient('users/me', { timeout: 100 })
+    vi.advanceTimersByTime(100)
+
+    await expect(promise).rejects.toBeInstanceOf(TimeoutError)
+    vi.useRealTimers()
+  })
+
+  it('clears timeout when request succeeds', async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
+    const fetchMock = mockFetch({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ id: 'u1' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiClient('users/me')
+
+    expect(clearTimeoutSpy).toHaveBeenCalled()
+    clearTimeoutSpy.mockRestore()
   })
 })
 

@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink, RouterView } from 'vue-router'
 import { computed } from 'vue'
 import { useMe } from '@/composables/useMe'
 import { ApiError } from '@/api/client'
-import { Loader2, AlertCircle, LogOut, User } from '@lucide/vue'
+import { Loader2, AlertCircle, LogOut } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ThemeToggle from './ThemeToggle.vue'
-import UserDisplay from '@/components/UserDisplay.vue'
-import { useUsersByID } from '@/composables/useUsersByID'
 
 const { isLoading, isError, error, data: me, refetch } = useMe()
 
@@ -16,9 +13,6 @@ const publicOrigin =
   (import.meta.env.VITE_TASKS_PUBLIC_ORIGIN as string | undefined) ?? window.location.origin
 
 const signOutHref = computed(() => `/oauth2/sign_out?rd=${encodeURIComponent(publicOrigin)}`)
-
-const demoUserIDs = computed(() => (me.value ? [me.value.id] : []))
-const { data: usersByID, isLoading: isLoadingUsers } = useUsersByID(demoUserIDs)
 
 const accessError = computed(() => {
   if (!isError.value || !error.value) return null
@@ -57,6 +51,17 @@ const accessError = computed(() => {
       </div>
 
       <div class="flex items-center gap-2">
+        <div
+          v-if="me"
+          class="hidden text-right leading-none sm:block"
+        >
+          <div class="text-sm font-medium">
+            {{ me.name }}
+          </div>
+          <div class="text-xs text-muted-foreground">
+            {{ me.email }}
+          </div>
+        </div>
         <ThemeToggle />
         <a
           v-if="signOutHref"
@@ -100,36 +105,7 @@ const accessError = computed(() => {
         </div>
       </div>
 
-      <div v-else-if="me" class="space-y-6">
-        <Card>
-          <CardHeader class="flex flex-row items-center gap-3 space-y-0 pb-2">
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground"
-            >
-              <User class="h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle class="text-base">{{ me.name }}</CardTitle>
-              <p class="text-sm text-muted-foreground">{{ me.email }}</p>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p class="text-xs font-medium text-muted-foreground">Identity directory preview</p>
-            <div class="mt-2 space-y-2">
-              <div v-if="isLoadingUsers" class="text-sm text-muted-foreground">
-                Loading identities...
-              </div>
-              <template v-else>
-                <UserDisplay v-for="u in Object.values(usersByID)" :key="u.id" :user="u" />
-              </template>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div class="rounded-lg border border-dashed p-8 text-center">
-          <p class="text-sm text-muted-foreground">Your task workspace will appear here.</p>
-        </div>
-      </div>
+      <RouterView v-else-if="me" />
     </main>
   </div>
 </template>

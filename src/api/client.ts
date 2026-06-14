@@ -15,8 +15,18 @@ export class ApiError extends Error {
 
 const baseUrl = (import.meta.env.VITE_TASKS_API_BASE_URL as string | undefined) ?? '/tasks'
 
-export interface ApiRequestInit extends Omit<RequestInit, 'body'> {
+const DEFAULT_TIMEOUT_MS = 10_000
+
+export class TimeoutError extends Error {
+  constructor() {
+    super('Request timed out')
+    this.name = 'TimeoutError'
+  }
+}
+
+export interface ApiRequestInit extends Omit<RequestInit, 'body' | 'signal'> {
   body?: unknown
+  timeout?: number
 }
 
 function buildUrl(path: string): string {
@@ -47,7 +57,7 @@ function isJsonBody(body: unknown): boolean {
 
 export async function apiClient<T>(path: string, options: ApiRequestInit = {}): Promise<T> {
   const url = buildUrl(path)
-  const { body, headers: originalHeaders, ...rest } = options
+  const { body, headers: originalHeaders, timeout = DEFAULT_TIMEOUT_MS, ...rest } = options
   const headers = new Headers(originalHeaders as HeadersInit | undefined)
 
   // The gateway supplies identity from cookies/session headers.
@@ -75,7 +85,21 @@ export async function apiClient<T>(path: string, options: ApiRequestInit = {}): 
     init.body = body as BodyInit
   }
 
-  const response = await fetch(url, init)
+  const controller = new AbortController()
+  init.signal = controller.signal
+  const timer = setTimeout(() => controller.abort(), timeout)
+
+  let response: Response
+  try {
+    response = await fetch(url, init)
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new TimeoutError()
+    }
+    throw error
+  } finally {
+    clearTimeout(timer)
+  }
 
   if (response.status === 204) {
     return undefined as T

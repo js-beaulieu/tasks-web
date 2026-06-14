@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test('loads the shell with a seeded current user', async ({ page }) => {
-  await page.route(/\/(tasks|api)\/users\/me/, async (route) => {
+  await page.route('*/**/api/users/me', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -9,7 +9,7 @@ test('loads the shell with a seeded current user', async ({ page }) => {
         id: 'dev-user',
         name: 'Dev User',
         email: 'dev@example.com',
-        preferredIdentity: 'dev',
+        created_at: '2026-01-01T00:00:00Z',
       }),
     })
   })

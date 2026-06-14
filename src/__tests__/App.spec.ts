@@ -13,7 +13,7 @@ describe('App', () => {
     return mount(App, {
       global: {
         plugins: [[VueQueryPlugin, { queryClient }]],
-        stubs: { ThemeToggle: true, RouterLink: true },
+        stubs: { ThemeToggle: true, RouterLink: true, RouterView: true },
       },
     })
   }
@@ -32,7 +32,6 @@ describe('App', () => {
       email: 'alice@example.com',
       createdAt: '2026-01-01T00:00:00Z',
     })
-    vi.spyOn(usersApi, 'getUsersByIDs').mockResolvedValue([])
 
     const wrapper = wrapperWithQuery()
     await vi.waitFor(() => expect(wrapper.text()).toContain('Alice'))
