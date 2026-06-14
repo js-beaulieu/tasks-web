@@ -7,6 +7,8 @@ import { Loader2, AlertCircle, LogOut, User } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ThemeToggle from './ThemeToggle.vue'
+import UserDisplay from '@/components/UserDisplay.vue'
+import { useUsersByID } from '@/composables/useUsersByID'
 
 const { isLoading, isError, error, data: me, refetch } = useMe()
 
@@ -14,6 +16,9 @@ const publicOrigin =
   (import.meta.env.VITE_TASKS_PUBLIC_ORIGIN as string | undefined) ?? window.location.origin
 
 const signOutHref = computed(() => `/oauth2/sign_out?rd=${encodeURIComponent(publicOrigin)}`)
+
+const demoUserIDs = computed(() => (me.value ? [me.value.id] : []))
+const { data: usersByID, isLoading: isLoadingUsers } = useUsersByID(demoUserIDs)
 
 const accessError = computed(() => {
   if (!isError.value || !error.value) return null
@@ -108,10 +113,16 @@ const accessError = computed(() => {
               <p class="text-sm text-muted-foreground">{{ me.email }}</p>
             </div>
           </CardHeader>
-          <CardContent v-if="me.preferredIdentity">
-            <p class="text-xs text-muted-foreground">
-              Preferred identity: {{ me.preferredIdentity }}
-            </p>
+          <CardContent>
+            <p class="text-xs font-medium text-muted-foreground">Identity directory preview</p>
+            <div class="mt-2 space-y-2">
+              <div v-if="isLoadingUsers" class="text-sm text-muted-foreground">
+                Loading identities...
+              </div>
+              <template v-else>
+                <UserDisplay v-for="u in Object.values(usersByID)" :key="u.id" :user="u" />
+              </template>
+            </div>
           </CardContent>
         </Card>
 

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0",
     "build": "run-p typecheck \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",
@@ -25,6 +25,7 @@
     "@tanstack/vue-query": "^5.75.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "es-toolkit": "^1.47.1",
     "pinia": "^3.0.4",
     "reka-ui": "^2.9.10",
     "tailwind-merge": "^3.6.0",

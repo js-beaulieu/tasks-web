@@ -30,14 +30,14 @@ describe('App', () => {
       id: 'u1',
       name: 'Alice',
       email: 'alice@example.com',
-      preferredIdentity: 'alice',
+      createdAt: '2026-01-01T00:00:00Z',
     })
+    vi.spyOn(usersApi, 'getUsersByIDs').mockResolvedValue([])
 
     const wrapper = wrapperWithQuery()
     await vi.waitFor(() => expect(wrapper.text()).toContain('Alice'))
 
     expect(wrapper.text()).toContain('alice@example.com')
-    expect(wrapper.text()).toContain('Preferred identity: alice')
   })
 
   it('renders session error when fetch fails', async () => {

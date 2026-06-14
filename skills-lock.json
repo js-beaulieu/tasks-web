@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "recommend": {
+      "source": "toss/es-toolkit",
+      "sourceType": "github",
+      "skillPath": "es-toolkit-plugin/skills/recommend/SKILL.md",
+      "computedHash": "635cf892797a95fb765fbb9c015b815e8704de5395401393938f54e60cc572fe"
+    },
     "shadcn-vue": {
       "source": "unovue/shadcn-vue",
       "sourceType": "github",

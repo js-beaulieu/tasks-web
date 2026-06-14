@@ -21,6 +21,7 @@ export default defineConfigWithVueTs(
     '**/dist/**',
     '**/dist-ssr/**',
     '**/coverage/**',
+    '.agents/**',
   ]),
 
   ...pluginVue.configs['flat/essential'],
