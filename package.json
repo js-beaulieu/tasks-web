@@ -20,6 +20,7 @@
     "format": "oxfmt src/"
   },
   "dependencies": {
+    "@internationalized/date": "^3.12.2",
     "@lucide/vue": "^1.18.0",
     "@tailwindcss/vite": "^4.3.1",
     "@tanstack/vue-query": "^5.75.4",

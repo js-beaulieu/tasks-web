@@ -17,6 +17,6 @@ test('loads the shell with a seeded current user', async ({ page }) => {
   await page.goto('/')
 
   await expect(page.locator('header')).toContainText('Tasks')
-  await expect(page.locator('main')).toContainText('Dev User')
-  await expect(page.locator('main')).toContainText('dev@example.com')
+  await expect(page.locator('header')).toContainText('Dev User')
+  await expect(page.locator('header')).toContainText('dev@example.com')
 })

@@ -7,7 +7,18 @@ const router = createRouter({
   routes: [
     { path: '/', redirect: '/projects' },
     { path: '/projects', name: 'projects', component: ProjectListView },
-    { path: '/projects/:projectID', name: 'project-detail', component: ProjectDetailView },
+    {
+      path: '/projects/:projectID',
+      name: 'project-detail',
+      component: ProjectDetailView,
+      children: [
+        {
+          path: 'tasks/:taskID',
+          name: 'task-detail',
+          component: () => import('@/components/tasks/TaskDetailSheet.vue'),
+        },
+      ],
+    },
   ],
 })
 

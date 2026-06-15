@@ -27,10 +27,10 @@ export interface CreateTaskInput {
 
 export interface UpdateTaskInput {
   name?: string
-  description?: string
+  description?: string | null
   status?: string
-  dueDate?: string
-  assigneeId?: string
+  dueDate?: string | null
+  assigneeId?: string | null
   position?: number
   parentId?: string | null
   projectId?: string
@@ -69,10 +69,10 @@ interface ApiCreateTaskBody {
 
 interface ApiUpdateTaskBody {
   name?: string
-  description?: string
+  description?: string | null
   status?: string
-  due_date?: string
-  assignee_id?: string
+  due_date?: string | null
+  assignee_id?: string | null
   position?: number
   parent_id?: string | null
   project_id?: string

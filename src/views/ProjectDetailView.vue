@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink, RouterView } from 'vue-router'
 import { ArrowLeft } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -124,6 +124,7 @@ const accessError = computed(() => {
           <ProjectSettingsTab :project-i-d="projectID" />
         </TabsContent>
       </Tabs>
+      <RouterView />
     </div>
   </div>
 </template>
