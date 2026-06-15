@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CalendarClock, RotateCw, MoreHorizontal, Trash2 } from '@lucide/vue'
+import { CalendarClock, RotateCw, MoreHorizontal, Trash2, GripVertical } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +24,7 @@ const props = defineProps<{
   canModify: boolean
   subtaskCount?: number
   tags?: string[]
-  showCheckbox?: boolean
+  dragEnabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -50,18 +49,6 @@ const descriptionExcerpt = computed(() => {
   return firstLine.length > 120 ? firstLine.slice(0, 117) + '...' : firstLine
 })
 
-const isIncomplete = computed(() => {
-  return props.task.status !== 'done' && props.task.status !== 'cancelled'
-})
-
-function onCheckboxChange(checked: boolean | 'indeterminate') {
-  if (checked === true) {
-    emit('complete', props.task.id)
-  } else {
-    emit('uncomplete', props.task.id)
-  }
-}
-
 function openDetail() {
   emit('openDetail', props.task.id)
 }
@@ -73,17 +60,18 @@ const statusOptions = computed(() =>
 
 <template>
   <div
+    :data-task-id="task.id"
     class="rounded-lg border bg-card p-3 text-sm shadow-sm transition-colors hover:bg-accent/50 cursor-pointer group"
     @click="openDetail"
   >
     <div class="flex items-start gap-2">
-      <Checkbox
-        v-if="showCheckbox && isIncomplete && canModify"
-        :checked="false"
-        class="mt-0.5 shrink-0"
-        @update:checked="onCheckboxChange"
+      <div
+        v-if="dragEnabled"
+        class="drag-handle mt-0.5 shrink-0 cursor-grab text-muted-foreground/40 hover:text-muted-foreground active:cursor-grabbing"
         @click.stop
-      />
+      >
+        <GripVertical class="size-4" />
+      </div>
       <div class="min-w-0 flex-1">
         <div class="font-medium leading-snug">{{ task.name }}</div>
         <p

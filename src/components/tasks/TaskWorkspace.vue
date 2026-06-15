@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { groupBy, uniq } from 'es-toolkit'
-import { Loader2, XCircle, LayoutGrid, List } from '@lucide/vue'
+import { groupBy, uniq, orderBy } from 'es-toolkit'
+import { Loader2, XCircle, LayoutGrid, List, ArrowUpDown } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import TaskGroup from '@/components/tasks/TaskGroup.vue'
 import BoardView from '@/components/tasks/BoardView.vue'
 import TaskDeleteDialog from '@/components/tasks/TaskDeleteDialog.vue'
@@ -18,7 +25,9 @@ import { useCreateTask } from '@/composables/useCreateTask'
 import { useCompleteTask } from '@/composables/useCompleteTask'
 import { useUpdateTask } from '@/composables/useUpdateTask'
 import { useTaskViewPreference } from '@/composables/useTaskViewPreference'
+import { useTaskSort } from '@/composables/useTaskSort'
 import { ApiError } from '@/api/client'
+import { isOverdue } from '@/lib/date'
 import type { Task } from '@/api/tasks'
 import type { ProjectStatus } from '@/api/statuses'
 
@@ -53,6 +62,8 @@ const { canModify } = useEffectiveRole(
 )
 
 const { view } = useTaskViewPreference()
+const { sortMode, isManualOrder } = useTaskSort()
+const dragResetKey = ref(0)
 
 const collapsedStatuses = reactive<Record<string, boolean>>({
   done: true,
@@ -63,12 +74,41 @@ function toggleCollapse(status: string) {
   collapsedStatuses[status] = !collapsedStatuses[status]
 }
 
+const sortedTasks = computed(() => {
+  const allTasks = tasks.value ?? []
+  if (isManualOrder.value) return allTasks
+
+  const terminalStatuses = new Set(['done', 'cancelled'])
+
+  return orderBy(
+    allTasks,
+    [
+      (t: Task) => {
+        if (sortMode.value === 'dueDate') {
+          if (t.dueDate && isOverdue(t.dueDate)) return 0
+          if (t.dueDate) return 1
+          return 2
+        }
+        return 0
+      },
+      (t: Task) => {
+        if (sortMode.value === 'dueDate') {
+          if (terminalStatuses.has(t.status)) return t.updatedAt
+          return t.dueDate ?? ''
+        }
+        return 0
+      },
+    ],
+    ['asc', 'asc'],
+  )
+})
+
 const groupedTasks = computed(() => {
   const statusOrder: string[] = (statuses.value ?? []).map((s: ProjectStatus) => s.status)
   const defaultStatuses = ['todo', 'in_progress', 'done', 'cancelled']
   const allStatuses = uniq([...statusOrder, ...defaultStatuses])
 
-  const grouped = groupBy(tasks.value ?? [], (t) => t.status)
+  const grouped = groupBy(sortedTasks.value, (t) => t.status)
 
   return allStatuses
     .filter((s) => statusOrder.includes(s) || (grouped[s]?.length ?? 0) > 0)
@@ -91,6 +131,7 @@ const firstStatus = computed(() => {
 })
 
 const createMutation = useCreateTask()
+const isAdding = computed(() => createMutation.isPending.value)
 const completeMutation = useCompleteTask()
 const updateMutation = useUpdateTask()
 
@@ -113,11 +154,18 @@ function openTask(taskID: string) {
 }
 
 function handleCompleteTask(taskID: string) {
-  completeMutation.mutate({
-    taskID,
-    doneStatus: doneStatus.value,
-    projectID: props.projectID,
-  })
+  completeMutation.mutate(
+    {
+      taskID,
+      doneStatus: doneStatus.value,
+      projectID: props.projectID,
+    },
+    {
+      onError: () => {
+        dragResetKey.value++
+      },
+    },
+  )
 }
 
 function handleUncompleteTask(taskID: string) {
@@ -131,8 +179,28 @@ function handleMoveStatus(taskID: string, status: string) {
   if (status === doneStatus.value) {
     handleCompleteTask(taskID)
   } else {
-    updateMutation.mutate({ taskID, input: { status } })
+    updateMutation.mutate(
+      { taskID, input: { status } },
+      {
+        onError: () => {
+          dragResetKey.value++
+        },
+      },
+    )
   }
+}
+
+function handleReorder(taskID: string, newIndex: number, newStatus?: string) {
+  const input: { position: number; status?: string } = { position: newIndex }
+  if (newStatus) input.status = newStatus
+  updateMutation.mutate(
+    { taskID, input },
+    {
+      onError: () => {
+        dragResetKey.value++
+      },
+    },
+  )
 }
 
 const deleteTaskID = ref<string | null>(null)
@@ -161,6 +229,11 @@ const accessError = computed(() => {
     title: 'Could not load project',
     message: error.value instanceof Error ? error.value.message : 'Something went wrong while loading this project.',
   }
+})
+
+const sortLabel = computed(() => {
+  if (sortMode.value === 'dueDate') return 'Due date'
+  return 'Manual'
 })
 </script>
 
@@ -197,27 +270,45 @@ const accessError = computed(() => {
         <div class="text-sm text-muted-foreground">
           {{ (tasks ?? []).length }} task{{ (tasks ?? []).length !== 1 ? 's' : '' }}
         </div>
-        <div class="flex items-center gap-1 rounded-md border p-0.5">
-          <Button
-            variant="ghost"
+        <div class="flex items-center gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button variant="outline" size="sm" class="h-7 px-2 text-xs gap-1">
+                <ArrowUpDown class="h-3.5 w-3.5" />
+                {{ sortLabel }}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                :class="sortMode === 'position' ? 'bg-accent' : ''"
+                @click="sortMode = 'position'"
+              >
+                Manual order
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                :class="sortMode === 'dueDate' ? 'bg-accent' : ''"
+                @click="sortMode = 'dueDate'"
+              >
+                Due date
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <ToggleGroup
+            type="single"
+            :model-value="view"
+            variant="outline"
             size="sm"
-            class="h-7 px-2 text-xs"
-            :class="view === 'vertical' ? 'bg-accent' : ''"
-            @click="view = 'vertical'"
+            @update:model-value="(v: string) => { if (v) view = v as 'board' | 'vertical' }"
           >
-            <List class="mr-1 h-3.5 w-3.5" />
-            List
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            class="h-7 px-2 text-xs"
-            :class="view === 'board' ? 'bg-accent' : ''"
-            @click="view = 'board'"
-          >
-            <LayoutGrid class="mr-1 h-3.5 w-3.5" />
-            Board
-          </Button>
+            <ToggleGroupItem value="vertical" class="text-xs">
+              <List class="mr-1 h-3.5 w-3.5" />
+              List
+            </ToggleGroupItem>
+            <ToggleGroupItem value="board" class="text-xs">
+              <LayoutGrid class="mr-1 h-3.5 w-3.5" />
+              Board
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 
@@ -228,12 +319,14 @@ const accessError = computed(() => {
           :grouped-tasks="groupedTasks"
           :users-by-i-d="usersByID ?? {}"
           :can-modify="canModify"
+          :drag-enabled="canModify && isManualOrder"
+          :drag-reset-key="dragResetKey"
+          :is-adding="isAdding"
           @open-task="openTask"
-          @complete="handleCompleteTask"
-          @uncomplete="handleUncompleteTask"
           @delete="handleDeleteTask"
           @move-status="handleMoveStatus"
           @quick-add="handleQuickAdd"
+          @reorder="handleReorder"
         />
       </div>
 
@@ -250,7 +343,9 @@ const accessError = computed(() => {
             :statuses="statuses ?? []"
             :can-modify="canModify"
             :collapsed="collapsedStatuses[group.status]"
-            :show-checkbox="true"
+            :drag-enabled="canModify && isManualOrder"
+            :drag-reset-key="dragResetKey"
+            :is-adding="isAdding"
             :show-quick-add="true"
             @toggle-collapse="toggleCollapse"
             @open-task="openTask"
@@ -259,6 +354,7 @@ const accessError = computed(() => {
             @delete="handleDeleteTask"
             @move-status="handleMoveStatus"
             @quick-add="handleQuickAdd"
+            @reorder="handleReorder"
           />
         </div>
 

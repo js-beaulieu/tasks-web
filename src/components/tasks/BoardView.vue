@@ -1,52 +1,36 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { Plus } from '@lucide/vue'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { ref } from 'vue'
 import { Badge } from '@/components/ui/badge'
-import TaskCard from '@/components/tasks/TaskCard.vue'
+import BoardColumn from '@/components/tasks/BoardColumn.vue'
 import type { Task } from '@/api/tasks'
 import type { ProjectStatus } from '@/api/statuses'
 import type { UsersByIDMap } from '@/composables/useUsersByID'
 import { friendlyStatusLabel } from '@/lib/tasks'
 
-const props = defineProps<{
+defineProps<{
   projectID: string
   statuses: ProjectStatus[]
   groupedTasks: { status: string; tasks: Task[] }[]
   usersByID: UsersByIDMap
   canModify: boolean
+  dragEnabled: boolean
+  dragResetKey?: number
+  isAdding?: boolean
   tagsByTask?: Record<string, string[]>
   subtaskCounts?: Record<string, number>
 }>()
 
 const emit = defineEmits<{
   openTask: [taskID: string]
-  complete: [taskID: string]
-  uncomplete: [taskID: string]
   delete: [taskID: string]
   moveStatus: [taskID: string, status: string]
   quickAdd: [status: string, name: string]
+  reorder: [taskID: string, newIndex: number, newStatus?: string]
 }>()
 
-const quickAddStatus = ref<string | null>(null)
-const quickAddName = ref('')
+const scrollContainer = ref<HTMLElement | null>(null)
 
-function startQuickAdd(status: string) {
-  quickAddStatus.value = status
-  quickAddName.value = ''
-}
-
-function submitQuickAdd(status: string) {
-  const name = quickAddName.value.trim()
-  if (!name) return
-  emit('quickAdd', status, name)
-  quickAddName.value = ''
-  quickAddStatus.value = null
-}
-
-const defaultCollapsedStatuses = new Set(['done', 'cancelled'])
+const defaultCollapsedStatuses = new Set<string>()
 const collapsedColumns = ref<Set<string>>(new Set(defaultCollapsedStatuses))
 
 function toggleColumn(status: string) {
@@ -62,13 +46,10 @@ function toggleColumn(status: string) {
 function friendlyLabel(status: string): string {
   return friendlyStatusLabel(status)
 }
-
-const taskTags = computed(() => props.tagsByTask ?? {})
-const taskSubtaskCount = computed(() => props.subtaskCounts ?? {})
 </script>
 
 <template>
-  <ScrollArea class="w-full">
+  <div ref="scrollContainer" class="overflow-x-auto overscroll-x-contain">
     <div class="flex gap-4 pb-4 min-w-max">
       <div
         v-for="group in groupedTasks"
@@ -87,59 +68,26 @@ const taskSubtaskCount = computed(() => props.subtaskCounts ?? {})
           </button>
         </div>
 
-        <div v-if="!collapsedColumns.has(group.status)" class="flex flex-col gap-2">
-          <TaskCard
-            v-for="task in group.tasks"
-            :key="task.id"
-            :task="task"
-            :users-by-i-d="usersByID"
+        <div v-if="!collapsedColumns.has(group.status)">
+          <BoardColumn
+            :status="group.status"
+            :tasks="group.tasks"
             :project-i-d="projectID"
             :statuses="statuses"
+            :users-by-i-d="usersByID"
             :can-modify="canModify"
-            :tags="taskTags[task.id]"
-            :subtask-count="taskSubtaskCount[task.id]"
-          @open-detail="emit('openTask', $event)"
-          @complete="emit('complete', $event)"
-          @uncomplete="emit('uncomplete', $event)"
-          @delete="emit('delete', $event)"
-          @move-status="(id, s) => emit('moveStatus', id, s)"
+            :drag-enabled="dragEnabled"
+            :drag-reset-key="dragResetKey"
+            :is-adding="isAdding"
+            :scroll-container="scrollContainer"
+            :tags-by-task="tagsByTask"
+            :subtask-counts="subtaskCounts"
+            @open-task="emit('openTask', $event)"
+            @delete="emit('delete', $event)"
+            @move-status="(id, s) => emit('moveStatus', id, s)"
+            @reorder="(taskID, position, newStatus) => emit('reorder', taskID, position, newStatus)"
+            @quick-add="(status, name) => emit('quickAdd', status, name)"
           />
-
-          <div
-            v-if="group.tasks.length === 0"
-            class="rounded-lg border-2 border-dashed py-8 text-center text-xs text-muted-foreground"
-          >
-            Drop tasks here
-          </div>
-
-          <div v-if="canModify" class="flex flex-col gap-1">
-            <div v-if="quickAddStatus === group.status" class="flex items-center gap-1">
-              <Input
-                v-model="quickAddName"
-                placeholder="Task name…"
-                class="h-8 text-sm"
-                @keydown="(e: KeyboardEvent) => { if (e.key === 'Enter') submitQuickAdd(group.status); if (e.key === 'Escape') quickAddStatus = null }"
-              />
-              <Button
-                size="sm"
-                class="h-8 shrink-0"
-                :disabled="!quickAddName.trim()"
-                @click="submitQuickAdd(group.status)"
-              >
-                Add
-              </Button>
-            </div>
-            <Button
-              v-else
-              variant="ghost"
-              size="sm"
-              class="h-7 text-xs text-muted-foreground"
-              @click="startQuickAdd(group.status)"
-            >
-              <Plus class="mr-1 h-3 w-3" />
-              Add task
-            </Button>
-          </div>
         </div>
 
         <button
@@ -151,6 +99,5 @@ const taskSubtaskCount = computed(() => props.subtaskCounts ?? {})
         </button>
       </div>
     </div>
-    <ScrollBar orientation="horizontal" />
-  </ScrollArea>
+  </div>
 </template>
