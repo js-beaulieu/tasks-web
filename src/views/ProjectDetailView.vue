@@ -1,84 +1,52 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { Loader2, XCircle, ArrowLeft, CalendarClock, Pencil, Trash2 } from '@lucide/vue'
+import { ArrowLeft } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useProject } from '@/composables/useProject'
-import { useUpdateProject } from '@/composables/useUpdateProject'
-import { useDeleteProject } from '@/composables/useDeleteProject'
+import { useMembers } from '@/composables/useMembers'
 import { useUsersByID } from '@/composables/useUsersByID'
-import ProjectFormDialog from '@/components/projects/ProjectFormDialog.vue'
-import ProjectDeleteDialog from '@/components/projects/ProjectDeleteDialog.vue'
-import UserDisplay from '@/components/UserDisplay.vue'
+import TaskWorkspace from '@/components/tasks/TaskWorkspace.vue'
+import ProjectMembersTab from '@/components/projects/ProjectMembersTab.vue'
+import ProjectSettingsTab from '@/components/projects/ProjectSettingsTab.vue'
 import { ApiError } from '@/api/client'
-import { formatDate, formatRelativeDate, isOverdue } from '@/lib/date'
-import type { CreateProjectInput } from '@/api/projects'
+import { formatRelativeDate } from '@/lib/date'
 
 const route = useRoute()
 const router = useRouter()
 const projectID = computed(() => route.params.projectID as string)
+
 const { data: project, isLoading, isError, error } = useProject(projectID)
+const { data: members } = useMembers(projectID)
+
 const ownerIDs = computed(() => (project.value ? [project.value.ownerId] : []))
-const { data: usersByID } = useUsersByID(ownerIDs)
+const memberIDs = computed(() => (members.value ?? []).map((m) => m.userId))
+const allUserIDs = computed(() => [...new Set([...ownerIDs.value, ...memberIDs.value])])
+const { data: usersByID } = useUsersByID(allUserIDs)
 
-const updateMutation = useUpdateProject()
-const deleteMutation = useDeleteProject()
-
-const formOpen = ref(false)
-const deleteOpen = ref(false)
-const formBusy = updateMutation.isPending
-const deleteBusy = deleteMutation.isPending
-
-async function handleFormSubmit(input: CreateProjectInput) {
-  if (!project.value) return
-  await updateMutation.mutateAsync(
-    { projectID: project.value.id, input },
-    {
-      onSuccess: () => {
-        formOpen.value = false
-      },
-    },
-  )
-}
-
-function handleDeleteConfirm() {
-  if (!project.value) return
-  deleteMutation.mutate(project.value.id, {
-    onSuccess: () => {
-      deleteOpen.value = false
-      void router.push('/projects')
-    },
-  })
-}
+const activeTab = computed({
+  get: () => (route.query.tab as string) || 'tasks',
+  set: (tab: string) => {
+    router.replace({ query: { ...route.query, tab } })
+  },
+})
 
 const accessError = computed(() => {
   if (!isError.value || !error.value) return null
   const status = error.value instanceof ApiError ? error.value.problem.status : undefined
   if (status === 404) {
-    return {
-      title: 'Project not found',
-      message: 'This project does not exist or you no longer have access to it.',
-    }
+    return { title: 'Project not found', message: 'This project does not exist or you no longer have access to it.' }
   }
   if (status === 403) {
-    return {
-      title: 'Access denied',
-      message: 'You do not have permission to view this project.',
-    }
+    return { title: 'Access denied', message: 'You do not have permission to view this project.' }
   }
   if (status === 401) {
-    return {
-      title: 'Session expired',
-      message: 'Your session has expired. Sign in again to continue.',
-    }
+    return { title: 'Session expired', message: 'Your session has expired. Sign in again to continue.' }
   }
   return {
     title: 'Could not load project',
-    message:
-      error.value instanceof Error
-        ? error.value.message
-        : 'Something went wrong while loading this project.',
+    message: error.value instanceof Error ? error.value.message : 'Something went wrong while loading this project.',
   }
 })
 </script>
@@ -86,46 +54,19 @@ const accessError = computed(() => {
 <template>
   <div class="flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <Button
-        variant="outline"
-        size="sm"
-        as-child
-      >
-        <RouterLink to="/">
+      <Button variant="outline" size="sm" as-child>
+        <RouterLink to="/projects">
           <ArrowLeft data-icon="inline-start" />
           Back to projects
         </RouterLink>
       </Button>
-
-      <div
-        v-if="project"
-        class="flex items-center gap-2"
-      >
-        <Button
-          variant="outline"
-          size="sm"
-          @click="formOpen = true"
-        >
-          <Pencil data-icon="inline-start" />
-          Edit
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          class="hover:text-destructive"
-          @click="deleteOpen = true"
-        >
-          <Trash2 data-icon="inline-start" />
-          Delete
-        </Button>
-      </div>
     </div>
 
     <div
       v-if="isLoading"
       class="flex flex-col items-center gap-3 py-12"
     >
-      <Loader2 class="h-8 w-8 animate-spin text-primary" />
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       <p class="text-sm text-muted-foreground">Loading project…</p>
     </div>
 
@@ -136,7 +77,7 @@ const accessError = computed(() => {
       aria-live="assertive"
     >
       <div class="flex items-start gap-3">
-        <XCircle class="mt-0.5 h-5 w-5 text-destructive" />
+        <div class="mt-0.5 h-5 w-5 text-destructive">✕</div>
         <div>
           <h2 class="font-semibold text-destructive">{{ accessError.title }}</h2>
           <p class="mt-1 text-sm text-destructive/90">{{ accessError.message }}</p>
@@ -150,64 +91,39 @@ const accessError = computed(() => {
     >
       <div class="flex flex-col gap-1">
         <h1 class="text-xl font-semibold">{{ project.name }}</h1>
+        <div class="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          <span v-if="usersByID?.[project.ownerId]">
+            Owner: {{ usersByID[project.ownerId]!.name }}
+          </span>
+          <span>{{ formatRelativeDate(project.createdAt) }}</span>
+        </div>
         <p
           v-if="project.description"
-          class="whitespace-pre-wrap text-sm text-muted-foreground"
+          class="mt-1 whitespace-pre-wrap text-sm text-muted-foreground"
         >
           {{ project.description }}
         </p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-        <div
-          v-if="usersByID?.[project.ownerId]"
-          class="flex items-center gap-2"
-        >
-          <span>Owner:</span>
-          <UserDisplay :user="usersByID[project.ownerId]!" />
-        </div>
-        <div
-          v-if="project.dueDate"
-          class="flex items-center gap-1.5"
-          :class="isOverdue(project.dueDate) ? 'text-destructive' : ''"
-        >
-          <CalendarClock class="size-4" data-icon="inline-start" />
-          <span>Due {{ formatDate(project.dueDate) }}</span>
-        </div>
-      </div>
+      <Tabs v-model="activeTab" class="w-full">
+        <TabsList>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="members">Members</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader>
-          <CardTitle class="text-sm">Tasks</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p class="text-sm text-muted-foreground">
-            Task workspace will be built in the next phase.
-          </p>
-        </CardContent>
-      </Card>
+        <TabsContent value="tasks" class="mt-4">
+          <TaskWorkspace :project-i-d="projectID" />
+        </TabsContent>
 
-      <p class="text-xs text-muted-foreground">
-        Created {{ formatRelativeDate(project.createdAt) }} · Updated
-        {{ formatRelativeDate(project.updatedAt) }}
-      </p>
+        <TabsContent value="members" class="mt-4">
+          <ProjectMembersTab :project-i-d="projectID" />
+        </TabsContent>
+
+        <TabsContent value="settings" class="mt-4">
+          <ProjectSettingsTab :project-i-d="projectID" />
+        </TabsContent>
+      </Tabs>
     </div>
-
-    <ProjectFormDialog
-      v-if="project"
-      v-model:open="formOpen"
-      mode="edit"
-      :project="project"
-      :is-pending="formBusy"
-      @submit="handleFormSubmit"
-    />
-
-    <ProjectDeleteDialog
-      v-if="project"
-      v-model:open="deleteOpen"
-      :project="project"
-      :is-pending="deleteBusy"
-      @confirm="handleDeleteConfirm"
-    />
   </div>
 </template>
