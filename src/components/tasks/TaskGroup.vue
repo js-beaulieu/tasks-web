@@ -133,7 +133,7 @@ function onAdd(evt: { newIndex?: number; newDraggableIndex?: number; to: HTMLEle
     >
       <VueDraggable
         v-if="dragEnabled"
-        :key="tasksKey"
+        :key="dragResetKey"
         v-model="localTasks"
         :group="dragEnabled ? { name: 'vertical-tasks', pull: true, put: true } : { name: 'vertical-tasks', pull: false, put: false }"
         :animation="150"

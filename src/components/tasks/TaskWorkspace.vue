@@ -298,7 +298,7 @@ const sortLabel = computed(() => {
             :model-value="view"
             variant="outline"
             size="sm"
-            @update:model-value="(v: string) => { if (v) view = v as 'board' | 'vertical' }"
+            @update:model-value="(v) => { if (v) view = v as 'board' | 'vertical' }"
           >
             <ToggleGroupItem value="vertical" class="text-xs">
               <List class="mr-1 h-3.5 w-3.5" />
