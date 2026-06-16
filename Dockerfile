@@ -5,6 +5,6 @@ RUN corepack enable && pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
-FROM joseluisq/static-web-server:2-scratch
+FROM joseluisq/static-web-server:2
 ENV SERVER_ROOT=/public SERVER_FALLBACK_PATH=/public/index.html
 COPY --from=build /app/dist/ /public/
