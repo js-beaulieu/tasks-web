@@ -4,9 +4,9 @@ import { X, Tag as TagIcon, Loader2 } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useTaskTags } from '@/composables/useTaskTags'
-import { useAddTaskTag } from '@/composables/useAddTaskTag'
-import { useRemoveTaskTag } from '@/composables/useRemoveTaskTag'
+import { useTaskTags } from '@/composables/tags/useTaskTags'
+import { useAddTaskTag } from '@/composables/tags/useAddTaskTag'
+import { useRemoveTaskTag } from '@/composables/tags/useRemoveTaskTag'
 import { useTags } from '@/composables/useTags'
 
 const props = defineProps<{

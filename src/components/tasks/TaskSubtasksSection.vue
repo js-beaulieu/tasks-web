@@ -13,10 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useSubtasks } from '@/composables/useSubtasks'
-import { useCreateSubtask } from '@/composables/useCreateSubtask'
-import { useConvertToSubtask } from '@/composables/useConvertToSubtask'
-import { useDetachSubtask } from '@/composables/useDetachSubtask'
+import { useSubtasks } from '@/composables/subtasks/useSubtasks'
+import { useCreateSubtask } from '@/composables/subtasks/useCreateSubtask'
+import { useConvertToSubtask } from '@/composables/subtasks/useConvertToSubtask'
+import { useDetachSubtask } from '@/composables/subtasks/useDetachSubtask'
 import { useTasks } from '@/composables/useTasks'
 import { friendlyStatusLabel } from '@/lib/tasks'
 import type { Task } from '@/api/tasks'
