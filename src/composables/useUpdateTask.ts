@@ -7,8 +7,9 @@ export function useUpdateTask() {
 
   return useMutation<Task, Error, { taskID: string; input: UpdateTaskInput }>({
     mutationFn: ({ taskID, input }) => updateTask(taskID, input),
-    onSuccess: (updated) => {
+    onSuccess: (updated, variables) => {
       queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId, 'tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['tasks', variables.taskID] })
     },
     onError: (error) => {
       showErrorToast('Could not update task', error)

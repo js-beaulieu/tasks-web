@@ -70,6 +70,32 @@ export async function setupRoutes(page: import('@playwright/test').Page, tasks: 
       await route.continue()
     }
   })
+  await page.route('*/**/api/tags', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) })
+  })
+  await page.route('*/**/api/tasks/*/tags', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) })
+    } else if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 201, contentType: 'application/json', body: '{}' })
+    } else {
+      await route.continue()
+    }
+  })
+  await page.route('*/**/api/tasks/*/tags/*', async (route) => {
+    if (route.request().method() === 'DELETE') {
+      await route.fulfill({ status: 204 })
+    } else {
+      await route.continue()
+    }
+  })
+  await page.route('*/**/api/tasks/*/tasks', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) })
+    } else {
+      await route.continue()
+    }
+  })
 }
 
 export async function enableManualSort(page: import('@playwright/test').Page) {
