@@ -2,12 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
+import { makeApiTask } from '@/test/mocks/fixtures'
+import { getLastRequest, getRequestLog, seedMockData } from '@/test/mocks/state'
 import { useSubtasks } from './useSubtasks'
-import * as tasksApi from '@/api/tasks'
-
-vi.mock('@/api/tasks', () => ({
-  listSubtasks: vi.fn<() => Promise<ReturnType<typeof tasksApi.listSubtasks>>>(),
-}))
 
 function mountWithQuery(component: ReturnType<typeof defineComponent>) {
   const queryClient = new QueryClient({
@@ -22,7 +19,7 @@ function mountWithQuery(component: ReturnType<typeof defineComponent>) {
 
 describe('useSubtasks', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    seedMockData({ tasks: [] })
   })
 
   it('does not fetch when parentTaskID is undefined', async () => {
@@ -39,27 +36,13 @@ describe('useSubtasks', () => {
 
     mountWithQuery(TestComponent)
 
-    expect(tasksApi.listSubtasks).not.toHaveBeenCalled()
+    expect(getRequestLog()).toHaveLength(0)
   })
 
   it('fetches subtasks when parentTaskID is provided', async () => {
-    vi.mocked(tasksApi.listSubtasks).mockResolvedValue([
-      {
-        id: 's1',
-        projectId: 'p1',
-        parentId: 't1',
-        name: 'Sub task',
-        description: null,
-        status: 'todo',
-        dueDate: null,
-        ownerId: 'u1',
-        assigneeId: null,
-        position: 0,
-        recurrence: null,
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: '2026-01-01T00:00:00Z',
-      },
-    ])
+    seedMockData({
+      tasks: [makeApiTask({ id: 's1', project_id: 'p1', parent_id: 't1', name: 'Sub task', owner_id: 'u1' })],
+    })
 
     const parentTaskID = ref<string | undefined>('t1')
     const TestComponent = defineComponent({
@@ -74,13 +57,11 @@ describe('useSubtasks', () => {
 
     const wrapper = mountWithQuery(TestComponent)
 
-    await vi.waitFor(() => expect(tasksApi.listSubtasks).toHaveBeenCalledWith('t1'))
+    await vi.waitFor(() => expect(getLastRequest()?.pathname).toBe('/tasks/tasks/t1/tasks'))
     await vi.waitFor(() => expect(wrapper.text()).toContain('Sub task'))
   })
 
   it('returns empty array as placeholder before fetch completes', async () => {
-    vi.mocked(tasksApi.listSubtasks).mockResolvedValue([])
-
     const parentTaskID = ref<string | undefined>('t1')
     const TestComponent = defineComponent({
       setup() {

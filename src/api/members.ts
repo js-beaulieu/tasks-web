@@ -1,4 +1,10 @@
 import { apiClient, apiList } from './client'
+import type {
+  ApiProjectMember,
+  ApiAddMemberBody,
+  ApiUpdateMemberBody,
+  ApiRemoveMemberOutput,
+} from './types'
 
 export type MemberRole = 'read' | 'modify' | 'admin'
 
@@ -6,12 +12,6 @@ export interface ProjectMember {
   projectId: string
   userId: string
   role: MemberRole
-}
-
-interface ApiProjectMember {
-  project_id: string
-  user_id: string
-  role: string
 }
 
 function fromApiProjectMember(m: ApiProjectMember): ProjectMember {
@@ -38,11 +38,12 @@ export async function addProjectMember(
   projectID: string,
   input: AddMemberInput,
 ): Promise<ProjectMember> {
+  const body: ApiAddMemberBody = { user_id: input.userId, role: input.role }
   const member = await apiClient<ApiProjectMember>(
     `projects/${encodeURIComponent(projectID)}/members`,
     {
       method: 'POST',
-      body: { user_id: input.userId, role: input.role },
+      body,
     },
   )
   return fromApiProjectMember(member)
@@ -53,11 +54,12 @@ export async function updateProjectMember(
   userID: string,
   role: MemberRole,
 ): Promise<ProjectMember> {
+  const body: ApiUpdateMemberBody = { role }
   const member = await apiClient<ApiProjectMember>(
     `projects/${encodeURIComponent(projectID)}/members/${encodeURIComponent(userID)}`,
     {
       method: 'PATCH',
-      body: { role },
+      body,
     },
   )
   return fromApiProjectMember(member)
@@ -67,7 +69,7 @@ export async function removeProjectMember(
   projectID: string,
   userID: string,
 ): Promise<{ reassigned: number }> {
-  return apiClient<{ reassigned: number }>(
+  return apiClient<ApiRemoveMemberOutput>(
     `projects/${encodeURIComponent(projectID)}/members/${encodeURIComponent(userID)}`,
     { method: 'DELETE' },
   )

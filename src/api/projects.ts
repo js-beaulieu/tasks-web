@@ -1,4 +1,5 @@
 import { apiClient, apiList } from './client'
+import type { ApiProject, ApiCreateProjectBody, ApiUpdateProjectBody } from './types'
 
 export interface Project {
   id: string
@@ -17,22 +18,6 @@ export interface CreateProjectInput {
 }
 
 export type UpdateProjectInput = CreateProjectInput
-
-interface ApiProject {
-  id: string
-  name: string
-  description?: string
-  due_date?: string
-  owner_id: string
-  assignee_id?: string
-  created_at: string
-  updated_at: string
-}
-
-interface ApiCreateProjectBody {
-  name: string
-  description?: string
-}
 
 function fromApiProject(project: ApiProject): Project {
   return {
@@ -56,7 +41,7 @@ function toApiCreateBody(input: CreateProjectInput): ApiCreateProjectBody {
   return body
 }
 
-function toApiUpdateBody(input: UpdateProjectInput): ApiCreateProjectBody {
+function toApiUpdateBody(input: UpdateProjectInput): ApiUpdateProjectBody {
   return toApiCreateBody(input)
 }
 

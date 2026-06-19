@@ -1,9 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
+import { delay, HttpResponse, http } from 'msw'
+import { makeApiUser } from '@/test/mocks/fixtures'
+import { seedMockData } from '@/test/mocks/state'
+import { server } from '@/test/mocks/server'
 import App from '../App.vue'
-import * as usersApi from '../api/users'
-import { ApiError } from '../api/client'
 
 describe('App', () => {
   function wrapperWithQuery() {
@@ -19,18 +21,21 @@ describe('App', () => {
   }
 
   it('renders loading state while fetching current user', () => {
-    vi.spyOn(usersApi, 'getMe').mockImplementation(() => new Promise(() => {}))
+    server.use(
+      http.get('*/tasks/users/me', async () => {
+        await new Promise(() => {})
+        return HttpResponse.json({})
+      }),
+    )
 
     const wrapper = wrapperWithQuery()
     expect(wrapper.text()).toContain('Loading your account')
   })
 
   it('renders current user when fetch succeeds', async () => {
-    vi.spyOn(usersApi, 'getMe').mockResolvedValue({
-      id: 'u1',
-      name: 'Alice',
-      email: 'alice@example.com',
-      createdAt: '2026-01-01T00:00:00Z',
+    seedMockData({
+      me: makeApiUser({ id: 'u1', name: 'Alice', email: 'alice@example.com' }),
+      users: [makeApiUser({ id: 'u1', name: 'Alice', email: 'alice@example.com' })],
     })
 
     const wrapper = wrapperWithQuery()
@@ -40,22 +45,35 @@ describe('App', () => {
   })
 
   it('renders session error when fetch fails', async () => {
-    vi.spyOn(usersApi, 'getMe').mockRejectedValue(new Error('Network error'))
+    server.use(
+      http.get('*/tasks/users/me', async () => {
+        await delay(1)
+        return new HttpResponse('boom', { status: 500, statusText: 'Internal Server Error' })
+      }),
+    )
 
     const wrapper = wrapperWithQuery()
     await vi.waitFor(() => expect(wrapper.text()).toContain('Could not load session'))
 
-    expect(wrapper.text()).toContain('Network error')
+    expect(wrapper.text()).toContain('HTTP 500: Internal Server Error')
   })
 
   it('renders 401 access error', async () => {
-    vi.spyOn(usersApi, 'getMe').mockRejectedValue(
-      new ApiError({
-        type: '',
-        title: 'Unauthorized',
-        status: 401,
-        detail: 'Session expired',
-      }),
+    server.use(
+      http.get('*/tasks/users/me', async () =>
+        HttpResponse.json(
+          {
+            type: 'about:blank',
+            title: 'Unauthorized',
+            status: 401,
+            detail: 'Session expired',
+          },
+          {
+            status: 401,
+            headers: { 'content-type': 'application/problem+json' },
+          },
+        ),
+      ),
     )
 
     const wrapper = wrapperWithQuery()

@@ -1,17 +1,11 @@
 import { apiClient, apiList } from './client'
+import type { ApiUser } from './types'
 
 export interface User {
   id: string
   name: string
   email: string
   createdAt: string
-}
-
-interface ApiUser {
-  id: string
-  name: string
-  email: string
-  created_at: string
 }
 
 function fromApiUser(user: ApiUser): User {

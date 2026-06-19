@@ -1,4 +1,13 @@
 import { apiClient, apiList } from './client'
+import type {
+  ApiTask,
+  ApiCreateTaskBody,
+  ApiCreateSubtaskBody,
+  ApiUpdateTaskBody,
+  ApiCompleteTaskBody,
+  ApiCompleteTaskResp,
+  ApiAddTagBody,
+} from './types'
 
 export interface Task {
   id: string
@@ -42,65 +51,22 @@ export interface CompleteTaskResponse {
   next: Task | null
 }
 
-interface ApiTask {
-  id: string
-  project_id: string
-  parent_id: string | null
-  name: string
-  description: string | null
-  status: string
-  due_date: string | null
-  owner_id: string
-  assignee_id: string | null
-  position: number
-  recurrence: string | null
-  created_at: string
-  updated_at: string
-}
-
-interface ApiCreateTaskBody {
-  name: string
-  description?: string
-  status?: string
-  due_date?: string
-  assignee_id?: string
-  recurrence?: string
-}
-
-interface ApiUpdateTaskBody {
-  name?: string
-  description?: string | null
-  status?: string
-  due_date?: string | null
-  assignee_id?: string | null
-  position?: number
-  parent_id?: string | null
-  project_id?: string
-  recurrence?: string | null
-}
-
-interface ApiCompleteTaskBody {
-  done_status: string
-}
-
-interface ApiCompleteTaskResponse {
-  completed: ApiTask
-  next: ApiTask | null
-}
-
 function fromApiTask(t: ApiTask): Task {
+  // The API omits nullable fields when nil (Go `*string` + omitempty), so the
+  // generated types mark them optional. Normalize undefined → null to keep the
+  // app-level Task shape as `string | null`.
   return {
     id: t.id,
     projectId: t.project_id,
-    parentId: t.parent_id,
+    parentId: t.parent_id ?? null,
     name: t.name,
-    description: t.description,
+    description: t.description ?? null,
     status: t.status,
-    dueDate: t.due_date,
+    dueDate: t.due_date ?? null,
     ownerId: t.owner_id,
-    assigneeId: t.assignee_id,
+    assigneeId: t.assignee_id ?? null,
     position: t.position,
-    recurrence: t.recurrence,
+    recurrence: t.recurrence ?? null,
     createdAt: t.created_at,
     updatedAt: t.updated_at,
   }
@@ -119,10 +85,10 @@ function toApiCreateBody(input: CreateTaskInput): ApiCreateTaskBody {
 function toApiUpdateBody(input: UpdateTaskInput): ApiUpdateTaskBody {
   const body: ApiUpdateTaskBody = {}
   if (input.name !== undefined) body.name = input.name
-  if (input.description !== undefined) body.description = input.description
+  if (input.description !== undefined) body.description = input.description ?? undefined
   if (input.status !== undefined) body.status = input.status
-  if (input.dueDate !== undefined) body.due_date = input.dueDate
-  if (input.assigneeId !== undefined) body.assignee_id = input.assigneeId
+  if (input.dueDate !== undefined) body.due_date = input.dueDate ?? undefined
+  if (input.assigneeId !== undefined) body.assignee_id = input.assigneeId ?? undefined
   if (input.position !== undefined) body.position = input.position
   if (input.parentId !== undefined) body.parent_id = input.parentId
   if (input.projectId !== undefined) body.project_id = input.projectId
@@ -169,11 +135,8 @@ export async function deleteTask(taskID: string): Promise<void> {
   await apiClient<void>(`tasks/${encodeURIComponent(taskID)}`, { method: 'DELETE' })
 }
 
-export async function completeTask(
-  taskID: string,
-  doneStatus: string,
-): Promise<CompleteTaskResponse> {
-  const resp = await apiClient<ApiCompleteTaskResponse>(
+export async function completeTask(taskID: string, doneStatus: string): Promise<CompleteTaskResponse> {
+  const resp = await apiClient<ApiCompleteTaskResp>(
     `tasks/${encodeURIComponent(taskID)}/complete`,
     {
       method: 'POST',
@@ -195,9 +158,10 @@ export async function createSubtask(
   parentTaskID: string,
   input: CreateTaskInput,
 ): Promise<Task> {
+  const body = toApiCreateBody(input) as ApiCreateSubtaskBody
   const task = await apiClient<ApiTask>(`tasks/${encodeURIComponent(parentTaskID)}/tasks`, {
     method: 'POST',
-    body: toApiCreateBody(input),
+    body,
   })
   return fromApiTask(task)
 }
@@ -207,9 +171,10 @@ export async function listTaskTags(taskID: string): Promise<string[]> {
 }
 
 export async function addTaskTag(taskID: string, tag: string): Promise<void> {
+  const body: ApiAddTagBody = { tag }
   await apiClient<void>(`tasks/${encodeURIComponent(taskID)}/tags`, {
     method: 'POST',
-    body: { tag },
+    body,
   })
 }
 

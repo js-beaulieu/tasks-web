@@ -1,13 +1,8 @@
 import { apiList } from './client'
+import type { ApiProjectStatus } from './types'
 
 export interface ProjectStatus {
   projectId: string
-  status: string
-  position: number
-}
-
-interface ApiProjectStatus {
-  project_id: string
   status: string
   position: number
 }
