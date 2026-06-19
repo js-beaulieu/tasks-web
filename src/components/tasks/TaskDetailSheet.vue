@@ -40,6 +40,8 @@ import {
 } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import TaskDeleteDialog from '@/components/tasks/TaskDeleteDialog.vue'
+import TaskTagsSection from '@/components/tasks/TaskTagsSection.vue'
+import TaskSubtasksSection from '@/components/tasks/TaskSubtasksSection.vue'
 import UserDisplay from '@/components/UserDisplay.vue'
 import { useTask } from '@/composables/useTask'
 import { useProject } from '@/composables/useProject'
@@ -426,6 +428,22 @@ const formattedEditDueDate = computed(() => {
             </div>
           </div>
         </template>
+
+        <Separator />
+
+        <TaskTagsSection
+          :task-i-d="task.id"
+          :can-modify="canModify"
+        />
+
+        <Separator />
+
+        <TaskSubtasksSection
+          :task="task"
+          :project-i-d="projectID"
+          :statuses="statuses ?? []"
+          :can-modify="canModify"
+        />
 
         <TaskDeleteDialog
           :open="deleteDialogOpen"

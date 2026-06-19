@@ -2,8 +2,9 @@
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { groupBy, uniq, orderBy } from 'es-toolkit'
-import { Loader2, XCircle, LayoutGrid, List, ArrowUpDown } from '@lucide/vue'
+import { Loader2, XCircle, LayoutGrid, List, ArrowUpDown, Filter } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Checkbox } from '@/components/ui/checkbox'
 import TaskGroup from '@/components/tasks/TaskGroup.vue'
 import BoardView from '@/components/tasks/BoardView.vue'
 import TaskDeleteDialog from '@/components/tasks/TaskDeleteDialog.vue'
@@ -26,6 +29,7 @@ import { useCompleteTask } from '@/composables/useCompleteTask'
 import { useUpdateTask } from '@/composables/useUpdateTask'
 import { useTaskViewPreference } from '@/composables/useTaskViewPreference'
 import { useTaskSort } from '@/composables/useTaskSort'
+import { useTaskCardMetadata } from '@/composables/useTaskCardMetadata'
 import { ApiError } from '@/api/client'
 import { isOverdue } from '@/lib/date'
 import type { Task } from '@/api/tasks'
@@ -54,6 +58,10 @@ const userIDs = computed(() => {
   return uniq(ids)
 })
 const { data: usersByID } = useUsersByID(userIDs)
+
+const { tagsByTask, subtaskCounts } = useTaskCardMetadata(
+  computed(() => (tasks.value ?? []).map((t) => t.id)),
+)
 
 const { canModify } = useEffectiveRole(
   computed(() => me.value?.id),
@@ -103,12 +111,33 @@ const sortedTasks = computed(() => {
   )
 })
 
+const selectedTags = ref<string[]>([])
+
+const availableTags = computed(() => {
+  const tagSet = new Set<string>()
+  for (const tags of Object.values(tagsByTask.value)) {
+    for (const tag of tags) tagSet.add(tag)
+  }
+  return [...tagSet].sort()
+})
+
+const hasActiveFilters = computed(() => selectedTags.value.length > 0)
+
+const filteredTasks = computed(() => {
+  const all = sortedTasks.value
+  if (selectedTags.value.length === 0) return all
+  return all.filter((t) => {
+    const tags = tagsByTask.value[t.id] ?? []
+    return selectedTags.value.every((st) => tags.includes(st))
+  })
+})
+
 const groupedTasks = computed(() => {
   const statusOrder: string[] = (statuses.value ?? []).map((s: ProjectStatus) => s.status)
   const defaultStatuses = ['todo', 'in_progress', 'done', 'cancelled']
   const allStatuses = uniq([...statusOrder, ...defaultStatuses])
 
-  const grouped = groupBy(sortedTasks.value, (t) => t.status)
+  const grouped = groupBy(filteredTasks.value, (t) => t.status)
 
   return allStatuses
     .filter((s) => statusOrder.includes(s) || (grouped[s]?.length ?? 0) > 0)
@@ -268,9 +297,68 @@ const sortLabel = computed(() => {
     >
       <div class="flex items-center justify-between">
         <div class="text-sm text-muted-foreground">
-          {{ (tasks ?? []).length }} task{{ (tasks ?? []).length !== 1 ? 's' : '' }}
+          {{ filteredTasks.length }} task{{ filteredTasks.length !== 1 ? 's' : '' }}
+          <span v-if="hasActiveFilters" class="text-xs"> (filtered)</span>
         </div>
         <div class="flex items-center gap-1">
+          <Popover>
+            <PopoverTrigger as-child>
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-7 px-2 text-xs gap-1"
+                :class="hasActiveFilters ? 'border-primary' : ''"
+              >
+                <Filter class="h-3.5 w-3.5" />
+                Filter
+                <Badge
+                  v-if="hasActiveFilters"
+                  variant="secondary"
+                  class="ml-0.5 text-[10px] leading-none"
+                >
+                  {{ selectedTags.length }}
+                </Badge>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" class="w-56">
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-medium">Filter by tags</span>
+                  <Button
+                    v-if="hasActiveFilters"
+                    variant="ghost"
+                    size="sm"
+                    class="h-6 text-xs"
+                    @click="selectedTags = []"
+                  >
+                    Clear
+                  </Button>
+                </div>
+                <div
+                  v-if="availableTags.length === 0"
+                  class="py-2 text-center text-xs text-muted-foreground"
+                >
+                  No tags available
+                </div>
+                <div v-else class="flex flex-col gap-1">
+                  <label
+                    v-for="tag in availableTags"
+                    :key="tag"
+                    class="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 text-sm hover:bg-accent"
+                  >
+                    <Checkbox
+                      :model-value="selectedTags.includes(tag)"
+                      @update:model-value="(v: boolean | 'indeterminate') => {
+                        if (v === true) selectedTags = [...selectedTags, tag]
+                        else selectedTags = selectedTags.filter((t) => t !== tag)
+                      }"
+                    />
+                    {{ tag }}
+                  </label>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button variant="outline" size="sm" class="h-7 px-2 text-xs gap-1">
@@ -322,6 +410,8 @@ const sortLabel = computed(() => {
           :drag-enabled="canModify && isManualOrder"
           :drag-reset-key="dragResetKey"
           :is-adding="isAdding"
+          :tags-by-task="tagsByTask"
+          :subtask-counts="subtaskCounts"
           @open-task="openTask"
           @delete="handleDeleteTask"
           @move-status="handleMoveStatus"
@@ -347,6 +437,8 @@ const sortLabel = computed(() => {
             :drag-reset-key="dragResetKey"
             :is-adding="isAdding"
             :show-quick-add="true"
+            :tags-by-task="tagsByTask"
+            :subtask-counts="subtaskCounts"
             @toggle-collapse="toggleCollapse"
             @open-task="openTask"
             @complete="handleCompleteTask"
