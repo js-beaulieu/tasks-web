@@ -2,12 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
+import { getLastRequest, getRequestLog, seedMockData } from '@/test/mocks/state'
 import { useTaskTags } from './useTaskTags'
-import * as tasksApi from '@/api/tasks'
-
-vi.mock('@/api/tasks', () => ({
-  listTaskTags: vi.fn<() => Promise<ReturnType<typeof tasksApi.listTaskTags>>>(),
-}))
 
 function mountWithQuery(component: ReturnType<typeof defineComponent>) {
   const queryClient = new QueryClient({
@@ -22,7 +18,7 @@ function mountWithQuery(component: ReturnType<typeof defineComponent>) {
 
 describe('useTaskTags', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    seedMockData({ taskTags: {} })
   })
 
   it('does not fetch when taskID is undefined', async () => {
@@ -39,11 +35,11 @@ describe('useTaskTags', () => {
 
     mountWithQuery(TestComponent)
 
-    expect(tasksApi.listTaskTags).not.toHaveBeenCalled()
+    expect(getRequestLog()).toHaveLength(0)
   })
 
   it('fetches tags when taskID is provided', async () => {
-    vi.mocked(tasksApi.listTaskTags).mockResolvedValue(['urgent', 'bug'])
+    seedMockData({ taskTags: { t1: ['urgent', 'bug'] } })
 
     const taskID = ref<string | undefined>('t1')
     const TestComponent = defineComponent({
@@ -58,12 +54,12 @@ describe('useTaskTags', () => {
 
     const wrapper = mountWithQuery(TestComponent)
 
-    await vi.waitFor(() => expect(tasksApi.listTaskTags).toHaveBeenCalledWith('t1'))
+    await vi.waitFor(() => expect(getLastRequest()?.pathname).toBe('/tasks/tasks/t1/tags'))
     await vi.waitFor(() => expect(wrapper.text()).toContain('urgent'))
   })
 
   it('returns empty array as placeholder before fetch completes', async () => {
-    vi.mocked(tasksApi.listTaskTags).mockResolvedValue(['urgent'])
+    seedMockData({ taskTags: { t1: ['urgent'] } })
 
     const taskID = ref<string | undefined>('t1')
     const TestComponent = defineComponent({

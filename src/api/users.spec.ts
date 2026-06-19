@@ -1,14 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { apiClient, apiList } from '@/api/client'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { getLastRequest, getRequestLog, seedMockData } from '@/test/mocks/state'
+import { makeApiUser } from '@/test/mocks/fixtures'
 import { getMe, getUsersByIDs, searchUsers, type User } from './users'
 
-vi.mock('@/api/client', () => ({
-  apiClient: vi.fn<() => Promise<unknown>>(),
-  apiList: vi.fn<() => Promise<unknown[]>>(),
-}))
-
 beforeEach(() => {
-  vi.clearAllMocks()
+  seedMockData({
+    users: [
+      makeApiUser(),
+      makeApiUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' }),
+    ],
+  })
 })
 
 const mockUser = (partial: Partial<User> = {}): User => ({
@@ -19,23 +20,16 @@ const mockUser = (partial: Partial<User> = {}): User => ({
   ...partial,
 })
 
-function mockApiUser(partial: Record<string, unknown> = {}): Record<string, unknown> {
-  return {
-    id: 'u1',
-    name: 'Alice',
-    email: 'alice@example.com',
-    created_at: '2026-01-01T00:00:00Z',
-    ...partial,
-  }
-}
-
 describe('getMe', () => {
   it('returns the current user mapped from API shape', async () => {
-    vi.mocked(apiClient).mockResolvedValue(mockApiUser())
+    seedMockData({
+      me: makeApiUser({ id: 'u1', name: 'Alice', email: 'alice@example.com' }),
+    })
 
     const result = await getMe()
 
     expect(result).toEqual(mockUser())
+    expect(getLastRequest()?.pathname).toBe('/tasks/users/me')
   })
 })
 
@@ -44,61 +38,60 @@ describe('getUsersByIDs', () => {
     const result = await getUsersByIDs([])
 
     expect(result).toEqual([])
-    expect(apiList).not.toHaveBeenCalled()
+    expect(getRequestLog()).toHaveLength(0)
   })
 
   it('requests users by repeated ids query params and maps response', async () => {
-    vi.mocked(apiList).mockResolvedValue([
-      mockApiUser(),
-      mockApiUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' }),
-    ])
+    seedMockData({
+      users: [
+        makeApiUser({ id: 'u1', name: 'Alice', email: 'alice@example.com' }),
+        makeApiUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' }),
+      ],
+    })
 
     const result = await getUsersByIDs(['u1', 'u2'])
 
-    expect(apiList).toHaveBeenCalledWith('users?ids=u1&ids=u2')
     expect(result).toEqual([
       mockUser(),
       mockUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' }),
     ])
+    expect(getLastRequest()?.pathname).toBe('/tasks/users')
+    expect(getLastRequest()?.searchParams.ids).toEqual(['u1', 'u2'])
   })
 
   it('encodes IDs in query params', async () => {
-    vi.mocked(apiList).mockResolvedValue([])
+    seedMockData({ users: [] })
 
     await getUsersByIDs(['user with space', 'user&special'])
 
-    const expected = new URLSearchParams()
-    expected.append('ids', 'user with space')
-    expected.append('ids', 'user&special')
-    expect(apiList).toHaveBeenCalledWith(`users?${expected.toString()}`)
+    expect(getLastRequest()?.searchParams.ids).toEqual(['user with space', 'user&special'])
   })
 
   it('preserves duplicate IDs in the request', async () => {
-    vi.mocked(apiList).mockResolvedValue([mockApiUser()])
+    seedMockData({ users: [makeApiUser({ id: 'u1' })] })
 
     await getUsersByIDs(['u1', 'u1', 'u2'])
 
-    const calledPath = vi.mocked(apiList).mock.calls[0]?.[0] as string
-    const matches = calledPath.match(/ids=/g)
-    expect(matches).toHaveLength(3)
+    expect(getLastRequest()?.searchParams.ids).toEqual(['u1', 'u1', 'u2'])
   })
 })
 
 describe('searchUsers', () => {
   it('searches users with a query and default limit', async () => {
-    vi.mocked(apiList).mockResolvedValue([mockApiUser({ id: 'u2', name: 'Bob' })])
+    seedMockData({ users: [makeApiUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' })] })
 
     const result = await searchUsers('bob')
 
-    expect(apiList).toHaveBeenCalledWith('users?search=bob&limit=20')
-    expect(result).toEqual([mockUser({ id: 'u2', name: 'Bob' })])
+    expect(result).toEqual([mockUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' })])
+    expect(getLastRequest()?.pathname).toBe('/tasks/users')
+    expect(getLastRequest()?.searchParams).toEqual({ search: ['bob'], limit: ['20'] })
   })
 
   it('allows overriding the limit', async () => {
-    vi.mocked(apiList).mockResolvedValue([])
+    seedMockData({ users: [] })
 
     await searchUsers('bob', 5)
 
-    expect(apiList).toHaveBeenCalledWith('users?search=bob&limit=5')
+    expect(getLastRequest()?.searchParams).toEqual({ search: ['bob'], limit: ['5'] })
   })
 })

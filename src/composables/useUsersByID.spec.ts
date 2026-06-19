@@ -2,12 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { defineComponent, h, ref, computed } from 'vue'
 import { mount } from '@vue/test-utils'
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
+import { makeApiUser } from '@/test/mocks/fixtures'
+import { getLastRequest, getRequestLog, seedMockData } from '@/test/mocks/state'
 import { useUsersByID } from './useUsersByID'
-import * as usersApi from '@/api/users'
-
-vi.mock('@/api/users', () => ({
-  getUsersByIDs: vi.fn<() => Promise<ReturnType<typeof usersApi.getUsersByIDs>>>(),
-}))
 
 function mountWithQuery(component: ReturnType<typeof defineComponent>) {
   const queryClient = new QueryClient({
@@ -22,14 +19,10 @@ function mountWithQuery(component: ReturnType<typeof defineComponent>) {
 
 describe('useUsersByID', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    seedMockData({ users: [makeApiUser({ id: 'u1', name: 'Alice', email: 'alice@example.com' })] })
   })
 
   it('fetches users when IDs change from empty to non-empty', async () => {
-    vi.mocked(usersApi.getUsersByIDs).mockResolvedValue([
-      { id: 'u1', name: 'Alice', email: 'alice@example.com', createdAt: '2026-01-01T00:00:00Z' },
-    ])
-
     const ids = ref<string[]>([])
     const TestComponent = defineComponent({
       setup() {
@@ -43,18 +36,18 @@ describe('useUsersByID', () => {
 
     mountWithQuery(TestComponent)
 
-    expect(usersApi.getUsersByIDs).not.toHaveBeenCalled()
+    expect(getRequestLog()).toHaveLength(0)
 
     ids.value = ['u1']
-    await vi.waitFor(() => expect(usersApi.getUsersByIDs).toHaveBeenCalled())
+    await vi.waitFor(() => expect(getLastRequest()?.pathname).toBe('/tasks/users'))
 
-    expect(usersApi.getUsersByIDs).toHaveBeenCalledWith(['u1'])
+    expect(getLastRequest()?.searchParams.ids).toEqual(['u1'])
   })
 
   it('fetches when derived IDs from async data become available', async () => {
-    vi.mocked(usersApi.getUsersByIDs).mockResolvedValue([
-      { id: 'dev-user', name: 'Dev User', email: 'dev@example.com', createdAt: '2026-01-01T00:00:00Z' },
-    ])
+    seedMockData({
+      users: [makeApiUser({ id: 'dev-user', name: 'Dev User', email: 'dev@example.com' })],
+    })
 
     const projects = ref<Array<{ ownerId: string }> | undefined>(undefined)
     const ownerIDs = computed(() => projects.value?.map((p) => p.ownerId) ?? [])
@@ -71,19 +64,15 @@ describe('useUsersByID', () => {
 
     mountWithQuery(TestComponent)
 
-    expect(usersApi.getUsersByIDs).not.toHaveBeenCalled()
+    expect(getRequestLog()).toHaveLength(0)
 
     projects.value = [{ ownerId: 'dev-user' }]
-    await vi.waitFor(() => expect(usersApi.getUsersByIDs).toHaveBeenCalled())
+    await vi.waitFor(() => expect(getLastRequest()?.pathname).toBe('/tasks/users'))
 
-    expect(usersApi.getUsersByIDs).toHaveBeenCalledWith(['dev-user'])
+    expect(getLastRequest()?.searchParams.ids).toEqual(['dev-user'])
   })
 
   it('returns placeholderData immediately and replaces it with fetched users', async () => {
-    vi.mocked(usersApi.getUsersByIDs).mockResolvedValue([
-      { id: 'u1', name: 'Alice', email: 'alice@example.com', createdAt: '2026-01-01T00:00:00Z' },
-    ])
-
     const ids = ref<string[]>(['u1'])
     const TestComponent = defineComponent({
       setup() {
@@ -98,7 +87,7 @@ describe('useUsersByID', () => {
     const wrapper = mountWithQuery(TestComponent)
 
     expect(wrapper.text()).toBe('{}')
-    await vi.waitFor(() => expect(usersApi.getUsersByIDs).toHaveBeenCalled())
+    await vi.waitFor(() => expect(getLastRequest()?.pathname).toBe('/tasks/users'))
     await vi.waitFor(() => expect(wrapper.text()).toContain('Alice'))
   })
 })

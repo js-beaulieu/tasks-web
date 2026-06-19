@@ -1,17 +1,10 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './msw'
+import { ME } from './helpers'
 
-test('loads the shell with a seeded current user', async ({ page }) => {
-  await page.route('*/**/api/users/me', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'dev-user',
-        name: 'Dev User',
-        email: 'dev@example.com',
-        created_at: '2026-01-01T00:00:00Z',
-      }),
-    })
+test('loads the shell with a seeded current user', async ({ page, mockApi }) => {
+  await mockApi.prepare({
+    me: ME,
+    users: [ME],
   })
 
   await page.goto('/')
