@@ -1,7 +1,7 @@
 import { test, expect } from './msw'
 import {
   makeTask,
-  setupRoutes,
+  seedMockApi,
   enableManualSort,
   slowDrag,
   routePatch,
@@ -14,7 +14,7 @@ import {
 
 test.describe('Task lifecycle', () => {
   test('shows tasks grouped by status', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [
+    await seedMockApi(mockApi, [
       makeTask('t1', 'Buy groceries', 'todo', 0),
       {
         ...makeTask('t2', 'Write report', 'in_progress', 0),
@@ -35,7 +35,7 @@ test.describe('Task lifecycle', () => {
   })
 
   test('can switch between list and board view', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [makeTask('t1', 'Test task', 'todo', 0)])
+    await seedMockApi(mockApi, [makeTask('t1', 'Test task', 'todo', 0)])
 
     await page.goto('/projects/p1')
     await expect(page.getByText('Test task')).toBeVisible()
@@ -45,7 +45,7 @@ test.describe('Task lifecycle', () => {
   })
 
   test('opens task detail sheet when clicking a task', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [
+    await seedMockApi(mockApi, [
       {
         ...makeTask('t1', 'Review PR', 'todo', 0),
         description: 'Check the changes',
@@ -64,7 +64,7 @@ test.describe('Task lifecycle', () => {
   })
 
   test('can quick-add a task in a status group', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [])
+    await seedMockApi(mockApi, [])
 
     await page.goto('/projects/p1')
 
@@ -76,7 +76,7 @@ test.describe('Task lifecycle', () => {
   })
 
   test('task cards render in list view', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [makeTask('t1', 'Visible task', 'todo', 0)])
+    await seedMockApi(mockApi, [makeTask('t1', 'Visible task', 'todo', 0)])
 
     await page.goto('/projects/p1')
 
@@ -87,7 +87,7 @@ test.describe('Task lifecycle', () => {
   })
 
   test('task cards render in board view', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [makeTask('t1', 'Board task', 'todo', 0)])
+    await seedMockApi(mockApi, [makeTask('t1', 'Board task', 'todo', 0)])
 
     await page.goto('/projects/p1')
     await page.getByRole('button', { name: /board/i }).click()
@@ -96,7 +96,7 @@ test.describe('Task lifecycle', () => {
   })
 
   test('quick-add Add button enables and disables based on input', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [])
+    await seedMockApi(mockApi, [])
 
     await page.goto('/projects/p1')
     await page.getByRole('button', { name: /add task/i }).first().click()
@@ -112,7 +112,7 @@ test.describe('Task lifecycle', () => {
   })
 
   test('board view collapsed columns expand with tasks, not Add task button', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [makeTask('t1', 'Done task', 'done', 0)])
+    await seedMockApi(mockApi, [makeTask('t1', 'Done task', 'done', 0)])
 
     await page.goto('/projects/p1')
     await page.getByRole('button', { name: /board/i }).click()
@@ -127,7 +127,7 @@ test.describe('Task lifecycle', () => {
   })
 
   test('drag handles are visible when sort is Manual', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [makeTask('t1', 'Task A', 'todo', 100), makeTask('t2', 'Task B', 'todo', 200)])
+    await seedMockApi(mockApi, [makeTask('t1', 'Task A', 'todo', 100), makeTask('t2', 'Task B', 'todo', 200)])
 
     await page.goto('/projects/p1')
     await enableManualSort(page)
@@ -139,7 +139,7 @@ test.describe('Task lifecycle', () => {
   })
 
   test('drag handles are hidden when sort is not Manual', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [makeTask('t1', 'Sorted task', 'todo', 0)])
+    await seedMockApi(mockApi, [makeTask('t1', 'Sorted task', 'todo', 0)])
 
     await page.goto('/projects/p1')
 
@@ -150,7 +150,7 @@ test.describe('Task lifecycle', () => {
   })
 
   test('reorder in list view renders tasks with data-status', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [
+    await seedMockApi(mockApi, [
       makeTask('t1', 'Task A', 'todo', 0),
       makeTask('t2', 'Task B', 'todo', 1),
       makeTask('t3', 'Task C', 'todo', 2),
@@ -167,7 +167,7 @@ test.describe('Task lifecycle', () => {
 test.describe('Board: same-column reorder', () => {
   test('drag last item above first (C→above A) → pos 0', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100), makeTask('t2', 'B', 'todo', 200), makeTask('t3', 'C', 'todo', 300)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't3')
 
     await page.goto('/projects/p1')
@@ -187,7 +187,7 @@ test.describe('Board: same-column reorder', () => {
 
   test('drag first item below last (A→below C) → pos 2', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100), makeTask('t2', 'B', 'todo', 200), makeTask('t3', 'C', 'todo', 300)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
@@ -207,7 +207,7 @@ test.describe('Board: same-column reorder', () => {
 
   test('drag middle item above first (B→above A) → pos 0', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100), makeTask('t2', 'B', 'todo', 200), makeTask('t3', 'C', 'todo', 300)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't2')
 
     await page.goto('/projects/p1')
@@ -227,7 +227,7 @@ test.describe('Board: same-column reorder', () => {
 
   test('drag first item below second in 2-item list (A→below B) → pos 1', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100), makeTask('t2', 'B', 'todo', 200)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
@@ -247,7 +247,7 @@ test.describe('Board: same-column reorder', () => {
 
   test('drag item between two others (C→between A and B) → pos 1', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100), makeTask('t2', 'B', 'todo', 200), makeTask('t3', 'C', 'todo', 300)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't3')
 
     await page.goto('/projects/p1')
@@ -283,7 +283,7 @@ test.describe('Board: same-column reorder', () => {
 test.describe('Board: cross-column moves', () => {
   test('move task to empty column → pos 0', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
@@ -304,7 +304,7 @@ test.describe('Board: cross-column moves', () => {
 
   test('move task above existing in target column → pos 0', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100), makeTask('t2', 'B', 'in_progress', 200)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
@@ -325,7 +325,7 @@ test.describe('Board: cross-column moves', () => {
 
   test('move task below existing in target column → pos 1', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100), makeTask('t2', 'B', 'in_progress', 200)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
@@ -350,7 +350,7 @@ test.describe('Board: cross-column moves', () => {
       makeTask('t2', 'B', 'in_progress', 200),
       makeTask('t3', 'C', 'in_progress', 300),
     ]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
@@ -385,7 +385,7 @@ test.describe('Board: cross-column moves', () => {
 
   test('drag task to done column sends PATCH with done status', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
@@ -407,7 +407,7 @@ test.describe('Board: cross-column moves', () => {
 test.describe('List: same-group reorder', () => {
   test('drag item down within group (A→below B) → pos 1', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100), makeTask('t2', 'B', 'todo', 200)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
@@ -427,7 +427,7 @@ test.describe('List: same-group reorder', () => {
 
   test('drag item up within group (B→above A) → pos 0', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100), makeTask('t2', 'B', 'todo', 200)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't2')
 
     await page.goto('/projects/p1')
@@ -449,7 +449,7 @@ test.describe('List: same-group reorder', () => {
 test.describe('Menu-based movement', () => {
   test('move task to another status via dropdown in list view', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
@@ -466,7 +466,7 @@ test.describe('Menu-based movement', () => {
 
   test('move task to another status via dropdown in board view', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
     const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
@@ -484,7 +484,7 @@ test.describe('Menu-based movement', () => {
 
   test('move task to done via dropdown calls complete endpoint', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100)]
-    await setupRoutes(mockApi, tasks)
+    await seedMockApi(mockApi, tasks)
 
     await page.goto('/projects/p1')
 
@@ -506,7 +506,7 @@ test.describe('Menu-based movement', () => {
 
 test.describe('Drag handle visibility', () => {
   test('drag handle appears in manual sort mode and hides in due date mode', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [makeTask('t1', 'A', 'todo', 100)])
+    await seedMockApi(mockApi, [makeTask('t1', 'A', 'todo', 100)])
 
     await page.goto('/projects/p1')
     await enableManualSort(page)
@@ -520,7 +520,7 @@ test.describe('Drag handle visibility', () => {
   })
 
   test('drag handle appears in board view when sort is manual', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [makeTask('t1', 'A', 'todo', 100)])
+    await seedMockApi(mockApi, [makeTask('t1', 'A', 'todo', 100)])
 
     await page.goto('/projects/p1')
     await page.getByRole('button', { name: /board/i }).click()

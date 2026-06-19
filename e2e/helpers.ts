@@ -44,7 +44,7 @@ export function makeTask(id: string, name: string, status: string, position: num
   })
 }
 
-export async function setupRoutes(mockApi: MockApi, tasks: unknown[], seed: MockSeed = {}) {
+export async function seedMockApi(mockApi: MockApi, tasks: unknown[], seed: MockSeed = {}) {
   await mockApi.prepare({
     me: ME,
     users: USERS,
