@@ -21,6 +21,8 @@ export default defineConfigWithVueTs(
     '**/dist/**',
     '**/dist-ssr/**',
     '**/coverage/**',
+    '**/test-results/**',
+    '**/playwright-report/**',
     '.agents/**',
   ]),
 
