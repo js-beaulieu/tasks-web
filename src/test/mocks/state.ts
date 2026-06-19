@@ -4,7 +4,7 @@ import type {
   ApiProjectStatus,
   ApiTask,
   ApiUser,
-} from '../../api/types'
+} from '@/api/types'
 import {
   makeApiProject,
   makeApiProjectMember,

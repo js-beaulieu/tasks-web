@@ -1,5 +1,5 @@
 import { HttpResponse, http } from 'msw'
-import type { ApiProjectMember, ApiTask } from '../../api/types'
+import type { ApiProjectMember, ApiTask } from '@/api/types'
 import {
   addTaskTag,
   captureRequest,
