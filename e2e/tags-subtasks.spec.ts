@@ -236,7 +236,9 @@ test.describe('Subtasks', () => {
       expect(createdSubtaskName).toBe('New subtask')
     }).toPass({ timeout: 5000 })
 
-    await expect(page.locator('[data-slot="sheet-content"]').getByText('New subtask')).toBeVisible()
+    await expect(async () => {
+      await expect(page.locator('[data-slot="sheet-content"]').getByText('New subtask')).toBeVisible()
+    }).toPass({ timeout: 5000 })
   })
 
   test('lists subtasks in task detail', async ({ page }) => {
