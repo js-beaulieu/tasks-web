@@ -59,10 +59,6 @@ export async function seedMockApi(mockApi: MockApi, tasks: unknown[], seed: Mock
   })
 }
 
-export async function setupRoutes(mockApi: MockApi, tasks: unknown[], seed: MockSeed = {}) {
-  await seedMockApi(mockApi, tasks, seed)
-}
-
 export async function enableManualSort(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: /manual/i }).click()
   await page.getByRole('menuitem', { name: /manual order/i }).click()
