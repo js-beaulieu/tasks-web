@@ -1,11 +1,11 @@
 import { test, expect } from './msw'
-import { makeTask, openTaskDetail, setupRoutes } from './helpers'
+import { makeTask, openTaskDetail, seedMockApi } from './helpers'
 
 const TAG_TASK = makeTask('t1', 'Tagged task', 'todo', 0)
 
 test.describe('Tags', () => {
   test('displays tags on task card in list view', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [TAG_TASK], { taskTags: { t1: ['urgent', 'backend'] } })
+    await seedMockApi(mockApi, [TAG_TASK], { taskTags: { t1: ['urgent', 'backend'] } })
     await page.goto('/projects/p1')
 
     await expect(page.getByText('urgent')).toBeVisible()
@@ -13,7 +13,7 @@ test.describe('Tags', () => {
   })
 
   test('adds a tag from task detail', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [TAG_TASK])
+    await seedMockApi(mockApi, [TAG_TASK])
 
     await page.goto('/projects/p1')
     await openTaskDetail(page, 't1')
@@ -35,7 +35,7 @@ test.describe('Tags', () => {
   })
 
   test('strips spaces from tag names before submitting', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [TAG_TASK])
+    await seedMockApi(mockApi, [TAG_TASK])
 
     await page.goto('/projects/p1')
     await openTaskDetail(page, 't1')
@@ -53,7 +53,7 @@ test.describe('Tags', () => {
   })
 
   test('removes a tag from task detail', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [TAG_TASK], { taskTags: { t1: ['urgent'] } })
+    await seedMockApi(mockApi, [TAG_TASK], { taskTags: { t1: ['urgent'] } })
 
     await page.goto('/projects/p1')
     await openTaskDetail(page, 't1')
@@ -75,7 +75,7 @@ test.describe('Tags', () => {
   test('tag filter narrows the task list', async ({ page, mockApi }) => {
     const taskA = makeTask('t1', 'Task A', 'todo', 0)
     const taskB = makeTask('t2', 'Task B', 'todo', 1)
-    await setupRoutes(mockApi, [taskA, taskB], { taskTags: { t1: ['urgent'], t2: ['backend'] } })
+    await seedMockApi(mockApi, [taskA, taskB], { taskTags: { t1: ['urgent'], t2: ['backend'] } })
 
     await page.goto('/projects/p1')
 
@@ -95,7 +95,7 @@ const PARENT_TASK = makeTask('t1', 'Parent task', 'todo', 0)
 test.describe('Subtasks', () => {
   test('displays subtask count badge on task card', async ({ page, mockApi }) => {
     const subtask = { ...makeTask('s1', 'Sub task', 'todo', 0), parent_id: 't1' }
-    await setupRoutes(mockApi, [PARENT_TASK, subtask])
+    await seedMockApi(mockApi, [PARENT_TASK, subtask])
 
     await page.goto('/projects/p1')
 
@@ -103,7 +103,7 @@ test.describe('Subtasks', () => {
   })
 
   test('creates a subtask from task detail', async ({ page, mockApi }) => {
-    await setupRoutes(mockApi, [PARENT_TASK], { nextTaskID: 's-new' })
+    await seedMockApi(mockApi, [PARENT_TASK], { nextTaskID: 's-new' })
 
     await page.goto('/projects/p1')
     await openTaskDetail(page, 't1')
@@ -131,7 +131,7 @@ test.describe('Subtasks', () => {
       { ...makeTask('s1', 'First sub', 'todo', 0), parent_id: 't1' },
       { ...makeTask('s2', 'Second sub', 'done', 1), parent_id: 't1' },
     ]
-    await setupRoutes(mockApi, [PARENT_TASK, ...subtasks])
+    await seedMockApi(mockApi, [PARENT_TASK, ...subtasks])
 
     await page.goto('/projects/p1')
     await openTaskDetail(page, 't1')
@@ -143,7 +143,7 @@ test.describe('Subtasks', () => {
   test('detaches a subtask from its parent', async ({ page, mockApi }) => {
     const subtaskTask = { ...makeTask('t1', 'Sub task', 'todo', 0), parent_id: 't-parent' }
     const parentTask = makeTask('t-parent', 'Parent', 'todo', 0)
-    await setupRoutes(mockApi, [parentTask, subtaskTask])
+    await seedMockApi(mockApi, [parentTask, subtaskTask])
 
     await page.goto('/projects/p1')
     await openTaskDetail(page, 't1')
