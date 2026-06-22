@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { debounce } from 'es-toolkit'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { Loader2, Search, Trash2 } from '@lucide/vue'
 import {
   AlertDialog,
@@ -51,6 +52,8 @@ const allUserIDs = computed(() => {
 const { data: usersByID } = useUsersByID(allUserIDs)
 
 const searchQuery = ref('')
+const debouncedSearchQuery = ref('')
+const isDebouncingSearch = ref(false)
 const addRole = ref<MemberRole>('read')
 const editedRoles = ref<Record<string, MemberRole>>({})
 const pendingRemoval = ref<ProjectMember | null>(null)
@@ -60,7 +63,8 @@ const addMemberMutation = useAddProjectMember()
 const updateMemberMutation = useUpdateProjectMember()
 const removeMemberMutation = useRemoveProjectMember()
 
-const { data: searchResults, isFetching: isSearching, isError: searchError } = useUserSearch(searchQuery)
+const searchQueryTrimmed = computed(() => searchQuery.value.trim())
+const { data: searchResults, isFetching: isSearching, isError: searchError } = useUserSearch(debouncedSearchQuery)
 
 const ROLE_LABELS: Record<MemberRole, string> = {
   admin: 'Admin',
@@ -95,6 +99,33 @@ const availableSearchResults = computed(() =>
   (searchResults.value ?? []).filter((user) => !memberIDs.value.has(user.id)),
 )
 
+const isSearchBusy = computed(() => isDebouncingSearch.value || isSearching.value)
+
+const commitDebouncedSearch = debounce((query: string) => {
+  debouncedSearchQuery.value = query
+  isDebouncingSearch.value = false
+}, 300)
+
+watch(
+  searchQueryTrimmed,
+  (query) => {
+    if (query.length < 2) {
+      commitDebouncedSearch.cancel()
+      debouncedSearchQuery.value = query
+      isDebouncingSearch.value = false
+      return
+    }
+
+    isDebouncingSearch.value = true
+    commitDebouncedSearch(query)
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  commitDebouncedSearch.cancel()
+})
+
 watch(
   displayedMembers,
   (nextMembers) => {
@@ -125,6 +156,8 @@ function addCollaborator(userID: string): void {
     {
       onSuccess: () => {
         searchQuery.value = ''
+        debouncedSearchQuery.value = ''
+        isDebouncingSearch.value = false
       },
     },
   )
@@ -181,7 +214,8 @@ function confirmRemoval(): void {
           <div class="flex flex-col gap-2">
             <Label for="member-search">Search users</Label>
             <div class="relative">
-              <Search class="pointer-events-none absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
+              <Search v-if="!isSearchBusy" class="pointer-events-none absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
+              <Loader2 v-else class="pointer-events-none absolute top-2.5 left-2.5 h-4 w-4 animate-spin text-primary" />
               <Input
                 id="member-search"
                 v-model="searchQuery"
@@ -190,7 +224,7 @@ function confirmRemoval(): void {
               />
             </div>
             <p
-              v-if="searchQuery.trim().length > 0 && searchQuery.trim().length < 2"
+              v-if="searchQueryTrimmed.length > 0 && searchQueryTrimmed.length < 2"
               class="text-xs text-muted-foreground"
             >
               Type at least 2 characters to search.
@@ -212,10 +246,12 @@ function confirmRemoval(): void {
           </div>
         </div>
 
-        <div v-if="searchQuery.trim().length >= 2" class="flex flex-col gap-2">
-          <div v-if="isSearching" class="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 class="h-4 w-4 animate-spin" />
-            Searching users…
+        <div v-if="searchQueryTrimmed.length >= 2" class="flex flex-col gap-2">
+          <div v-if="isSearchBusy" class="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+            <div class="flex items-center gap-2">
+              <Loader2 class="h-4 w-4 animate-spin text-primary" />
+              <span>Searching users...</span>
+            </div>
           </div>
           <p v-else-if="searchError" class="text-sm text-destructive">
             Could not search users right now.
