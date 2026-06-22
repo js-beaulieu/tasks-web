@@ -1,6 +1,7 @@
 import { HttpResponse, http } from 'msw'
 import type { ApiProjectMember, ApiTask } from '@/api/types'
 import {
+  addProjectMember,
   addTaskTag,
   captureRequest,
   completeTask,
@@ -19,9 +20,11 @@ import {
   listSubtasks,
   listTasksByProject,
   listUsersByIDs,
+  removeProjectMember,
   removeTaskTag,
   searchUsers,
   setTaskTags,
+  updateProjectMember,
   updateProject,
   updateTask,
 } from './state'
@@ -133,23 +136,21 @@ export const handlers = [
 
   http.post('*/:base/projects/:projectID/members', async ({ request, params }) => {
     await captureRequest(request)
-    const body = (await request.json()) as ApiProjectMember
-    return ok({ ...body, project_id: String(params.projectID) })
+    const body = (await request.json()) as { user_id: string; role: ApiProjectMember['role'] }
+    return ok(addProjectMember(String(params.projectID), body.user_id, body.role))
   }),
 
   http.patch('*/:base/projects/:projectID/members/:userID', async ({ request, params }) => {
     await captureRequest(request)
     const body = (await request.json()) as Pick<ApiProjectMember, 'role'>
-    return ok({
-      project_id: String(params.projectID),
-      user_id: String(params.userID),
-      role: body.role,
-    })
+    const member = updateProjectMember(String(params.projectID), String(params.userID), body.role)
+    return member ? ok(member) : problem(404, 'Not Found')
   }),
 
-  http.delete('*/:base/projects/:projectID/members/:userID', async ({ request }) => {
+  http.delete('*/:base/projects/:projectID/members/:userID', async ({ request, params }) => {
     await captureRequest(request)
-    return ok({ reassigned: 0 })
+    const result = removeProjectMember(String(params.projectID), String(params.userID))
+    return result ? ok(result) : problem(404, 'Not Found')
   }),
 
   http.get('*/:base/projects/:projectID/statuses', async ({ request, params }) => {

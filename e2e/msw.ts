@@ -1,6 +1,7 @@
 import { test as base, expect } from '@playwright/test'
 import type { ApiProjectMember, ApiTask } from '../src/api/types'
 import {
+  addProjectMember,
   addTaskTag,
   captureRequest,
   completeTask,
@@ -21,10 +22,12 @@ import {
   listSubtasks,
   listTasksByProject,
   listUsersByIDs,
+  removeProjectMember,
   removeTaskTag,
   resetMockData,
   searchUsers,
   setCompletionNextTask,
+  updateProjectMember,
   updateTask,
   type MockData,
   type MockRequestLogEntry,
@@ -172,8 +175,8 @@ async function handleApiRoute(route: import('@playwright/test').Route): Promise<
     const projectID = decodeURIComponent(membersMatch[1]!)
     if (method === 'GET') return fulfillJson(route, listProjectMembers(projectID))
     if (method === 'POST') {
-      const body = jsonBody(route) as ApiProjectMember
-      return fulfillJson(route, { ...body, project_id: projectID })
+      const body = jsonBody(route) as { user_id: string; role: ApiProjectMember['role'] }
+      return fulfillJson(route, addProjectMember(projectID, body.user_id, body.role))
     }
   }
 
@@ -183,9 +186,13 @@ async function handleApiRoute(route: import('@playwright/test').Route): Promise<
     const userID = decodeURIComponent(memberMatch[2]!)
     if (method === 'PATCH') {
       const body = jsonBody(route) as Pick<ApiProjectMember, 'role'>
-      return fulfillJson(route, { project_id: projectID, user_id: userID, role: body.role })
+      const member = updateProjectMember(projectID, userID, body.role)
+      return member ? fulfillJson(route, member) : fulfillProblem(route, 404, 'Not Found')
     }
-    if (method === 'DELETE') return fulfillJson(route, { reassigned: 0 })
+    if (method === 'DELETE') {
+      const result = removeProjectMember(projectID, userID)
+      return result ? fulfillJson(route, result) : fulfillProblem(route, 404, 'Not Found')
+    }
   }
 
   const statusesMatch = pathname.match(/^\/projects\/([^/]+)\/statuses$/)

@@ -266,9 +266,80 @@ export function listProjectStatuses(projectID: string): ApiProjectStatus[] {
 }
 
 export function listProjectMembers(projectID: string): ApiProjectMember[] {
-  return state.members
-    .filter((member) => member.project_id === projectID)
-    .map(cloneMember)
+  const explicitMembers = state.members.filter((member) => member.project_id === projectID)
+  const project = state.projects.find((entry) => entry.id === projectID)
+
+  if (!project) {
+    return explicitMembers.map(cloneMember)
+  }
+
+  const members = explicitMembers.filter((member) => member.user_id !== project.owner_id)
+  return [
+    makeApiProjectMember({ project_id: projectID, user_id: project.owner_id, role: 'admin' }),
+    ...members.map(cloneMember),
+  ]
+}
+
+export function addProjectMember(projectID: string, userID: string, role: ApiProjectMember['role']): ApiProjectMember {
+  const existing = state.members.find(
+    (member) => member.project_id === projectID && member.user_id === userID,
+  )
+
+  if (existing) {
+    existing.role = role
+    return cloneMember(existing)
+  }
+
+  const member = makeApiProjectMember({ project_id: projectID, user_id: userID, role })
+  state.members.push(member)
+  return cloneMember(member)
+}
+
+export function updateProjectMember(projectID: string, userID: string, role: ApiProjectMember['role']): ApiProjectMember | undefined {
+  const project = state.projects.find((entry) => entry.id === projectID)
+  if (!project) {
+    return undefined
+  }
+
+  if (project.owner_id === userID) {
+    return makeApiProjectMember({ project_id: projectID, user_id: userID, role: 'admin' })
+  }
+
+  const member = state.members.find(
+    (entry) => entry.project_id === projectID && entry.user_id === userID,
+  )
+  if (!member) {
+    return undefined
+  }
+
+  member.role = role
+  return cloneMember(member)
+}
+
+export function removeProjectMember(projectID: string, userID: string): { reassigned: number } | undefined {
+  const project = state.projects.find((entry) => entry.id === projectID)
+  if (!project || project.owner_id === userID) {
+    return undefined
+  }
+
+  const index = state.members.findIndex(
+    (member) => member.project_id === projectID && member.user_id === userID,
+  )
+  if (index === -1) {
+    return undefined
+  }
+
+  let reassigned = 0
+  for (const task of state.tasks) {
+    if (task.project_id === projectID && task.assignee_id === userID) {
+      task.assignee_id = project.owner_id
+      task.updated_at = nextTimestamp(task.updated_at)
+      reassigned += 1
+    }
+  }
+
+  state.members.splice(index, 1)
+  return { reassigned }
 }
 
 export function listGlobalTags(): string[] {
