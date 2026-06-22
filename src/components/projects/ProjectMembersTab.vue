@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { debounce } from 'es-toolkit'
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Loader2, Search, Trash2 } from '@lucide/vue'
 import {
   AlertDialog,
@@ -27,6 +26,7 @@ import { useProject } from '@/composables/useProject'
 import { useRemoveProjectMember } from '@/composables/members/useRemoveProjectMember'
 import { useUpdateProjectMember } from '@/composables/members/useUpdateProjectMember'
 import { useUserSearch } from '@/composables/members/useUserSearch'
+import { useDebouncedValue } from '@/composables/useDebouncedValue'
 import { useUsersByID } from '@/composables/useUsersByID'
 import type { MemberRole, ProjectMember } from '@/api/members'
 
@@ -52,8 +52,6 @@ const allUserIDs = computed(() => {
 const { data: usersByID } = useUsersByID(allUserIDs)
 
 const searchQuery = ref('')
-const debouncedSearchQuery = ref('')
-const isDebouncingSearch = ref(false)
 const addRole = ref<MemberRole>('read')
 const editedRoles = ref<Record<string, MemberRole>>({})
 const pendingRemoval = ref<ProjectMember | null>(null)
@@ -64,6 +62,11 @@ const updateMemberMutation = useUpdateProjectMember()
 const removeMemberMutation = useRemoveProjectMember()
 
 const searchQueryTrimmed = computed(() => searchQuery.value.trim())
+const { debounced: debouncedSearchQuery, isDebouncing: isDebouncingSearch } = useDebouncedValue(
+  searchQueryTrimmed,
+  300,
+  (query) => query.length >= 2,
+)
 const { data: searchResults, isFetching: isSearching, isError: searchError } = useUserSearch(debouncedSearchQuery)
 
 const ROLE_LABELS: Record<MemberRole, string> = {
@@ -101,31 +104,6 @@ const availableSearchResults = computed(() =>
 
 const isSearchBusy = computed(() => isDebouncingSearch.value || isSearching.value)
 
-const commitDebouncedSearch = debounce((query: string) => {
-  debouncedSearchQuery.value = query
-  isDebouncingSearch.value = false
-}, 300)
-
-watch(
-  searchQueryTrimmed,
-  (query) => {
-    if (query.length < 2) {
-      commitDebouncedSearch.cancel()
-      debouncedSearchQuery.value = query
-      isDebouncingSearch.value = false
-      return
-    }
-
-    isDebouncingSearch.value = true
-    commitDebouncedSearch(query)
-  },
-  { immediate: true },
-)
-
-onBeforeUnmount(() => {
-  commitDebouncedSearch.cancel()
-})
-
 watch(
   displayedMembers,
   (nextMembers) => {
@@ -156,8 +134,6 @@ function addCollaborator(userID: string): void {
     {
       onSuccess: () => {
         searchQuery.value = ''
-        debouncedSearchQuery.value = ''
-        isDebouncingSearch.value = false
       },
     },
   )
