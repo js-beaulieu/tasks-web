@@ -129,6 +129,17 @@ describe('updateTask', () => {
     expect(getLastRequest()?.body).toEqual({ parent_id: null })
     expect(result.parentId).toBeNull()
   })
+
+  it('sends project_id for cross-project move', async () => {
+    seedMockData({
+      tasks: [makeApiTask({ id: 't1', project_id: 'p1', owner_id: 'u1' })],
+    })
+
+    const result = await updateTask('t1', { projectId: 'p2' })
+
+    expect(getLastRequest()?.body).toEqual({ project_id: 'p2' })
+    expect(result.projectId).toBe('p2')
+  })
 })
 
 describe('deleteTask', () => {

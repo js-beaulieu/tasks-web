@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { CalendarDate } from '@internationalized/date'
 import type { DateValue } from 'reka-ui'
 import { uniq } from 'es-toolkit'
+import { toast } from 'vue-sonner'
 import {
   Loader2,
   RotateCw,
@@ -39,10 +40,21 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import TaskDeleteDialog from '@/components/tasks/TaskDeleteDialog.vue'
 import TaskTagsSection from '@/components/tasks/TaskTagsSection.vue'
 import TaskSubtasksSection from '@/components/tasks/TaskSubtasksSection.vue'
 import UserDisplay from '@/components/UserDisplay.vue'
+import { useProjects } from '@/composables/useProjects'
 import { useTask } from '@/composables/useTask'
 import { useProject } from '@/composables/useProject'
 import { useUpdateTask } from '@/composables/useUpdateTask'
@@ -65,6 +77,7 @@ const open = computed(() => !!taskID.value)
 
 const { data: task, isLoading } = useTask(taskID)
 const { data: project } = useProject(projectID)
+const { data: projects } = useProjects()
 const { data: statuses } = useStatuses(projectID)
 const { data: members } = useMembers(projectID)
 const { data: me } = useMe()
@@ -90,10 +103,13 @@ const editing = ref(false)
 
 const editName = ref('')
 const editDescription = ref('')
+const editProjectId = ref('')
 const editStatus = ref('')
 const editAssigneeId = ref<string>('__none__')
 const editDueDate = ref<DateValue | undefined>()
 const dirty = ref(false)
+const moveConfirmationOpen = ref(false)
+const pendingMoveConfirmation = ref<UpdateTaskInput | null>(null)
 
 function parseISOToDateValue(iso: string | null): DateValue | undefined {
   if (!iso) return undefined
@@ -106,7 +122,8 @@ function dateValueToISO(dv: DateValue | undefined): string | undefined {
   return new Date(dv.year, dv.month - 1, dv.day).toISOString()
 }
 
-function resetEditFields(t: { name: string; description: string | null; status: string; assigneeId: string | null; dueDate: string | null }) {
+function resetEditFields(t: { projectId: string; name: string; description: string | null; status: string; assigneeId: string | null; dueDate: string | null }) {
+	editProjectId.value = t.projectId
   editName.value = t.name
   editDescription.value = t.description ?? ''
   editStatus.value = t.status
@@ -120,22 +137,24 @@ watch(task, (t) => {
   resetEditFields(t)
 }, { immediate: true })
 
-watch([editName, editDescription, editStatus, editAssigneeId, editDueDate], () => {
+watch([editName, editDescription, editProjectId, editStatus, editAssigneeId, editDueDate], () => {
   if (!task.value) return
+  const projectChanged = editProjectId.value !== task.value.projectId
   const nameChanged = editName.value !== task.value.name
   const descChanged = editDescription.value !== (task.value.description ?? '')
   const statusChanged = editStatus.value !== task.value.status
   const assigneeChanged = editAssigneeId.value !== (task.value.assigneeId ?? '__none__')
   const dueDateChanged = dateValueToISO(editDueDate.value) !== (task.value.dueDate ?? undefined)
-  dirty.value = nameChanged || descChanged || statusChanged || assigneeChanged || dueDateChanged
+  dirty.value = projectChanged || nameChanged || descChanged || statusChanged || assigneeChanged || dueDateChanged
 })
 
 const updateMutation = useUpdateTask()
 
-function save() {
-  if (!task.value || !dirty.value) return
-
+function buildUpdateInput(): UpdateTaskInput {
   const input: UpdateTaskInput = {}
+  if (!task.value) return input
+
+  if (editProjectId.value !== task.value.projectId) input.projectId = editProjectId.value
   if (editName.value !== task.value.name) input.name = editName.value
   if (editDescription.value !== (task.value.description ?? '')) {
     input.description = editDescription.value || undefined
@@ -149,10 +168,61 @@ function save() {
     input.dueDate = newDueDate
   }
 
+  return input
+}
+
+function handleMoveSuccess(updatedProjectID: string, updatedTaskID: string) {
+  const targetProjectName = projectOptions.value.find((option) => option.value === updatedProjectID)?.label ?? 'target project'
+
+  dirty.value = false
+  editing.value = false
+  close()
+  toast.success('Task moved', {
+    description: `Moved to ${targetProjectName}. Status and assignee were adjusted if the target project required it.`,
+    action: {
+      label: 'Open task',
+      onClick: () => {
+        void router.push({ name: 'task-detail', params: { projectID: updatedProjectID, taskID: updatedTaskID } })
+      },
+    },
+  })
+}
+
+function commitSave(input: UpdateTaskInput) {
+  if (!task.value) return
+
   updateMutation.mutate(
-    { taskID: task.value.id, input },
-    { onSuccess: () => { dirty.value = false; editing.value = false } },
+    { taskID: task.value.id, input, sourceProjectID: projectID.value },
+    {
+      onSuccess: (updated) => {
+        moveConfirmationOpen.value = false
+        pendingMoveConfirmation.value = null
+        if (updated.projectId !== projectID.value) {
+          handleMoveSuccess(updated.projectId, updated.id)
+          return
+        }
+        dirty.value = false
+        editing.value = false
+      },
+      onError: () => {
+        moveConfirmationOpen.value = false
+        pendingMoveConfirmation.value = null
+      },
+    },
   )
+}
+
+function save() {
+  if (!task.value || !dirty.value) return
+
+  const input = buildUpdateInput()
+  if (input.projectId && input.projectId !== task.value.projectId) {
+    pendingMoveConfirmation.value = input
+    moveConfirmationOpen.value = true
+    return
+  }
+
+  commitSave(input)
 }
 
 function startEditing() {
@@ -163,7 +233,21 @@ function startEditing() {
 
 function cancelEditing() {
   editing.value = false
+  moveConfirmationOpen.value = false
+  pendingMoveConfirmation.value = null
   if (task.value) resetEditFields(task.value)
+}
+
+function confirmMove() {
+  const input = pendingMoveConfirmation.value
+  if (!input) return
+  moveConfirmationOpen.value = false
+  commitSave(input)
+}
+
+function cancelMoveConfirmation() {
+  moveConfirmationOpen.value = false
+  pendingMoveConfirmation.value = null
 }
 
 function close() {
@@ -174,6 +258,10 @@ const deleteDialogOpen = ref(false)
 
 const statusOptions = computed(() =>
   (statuses.value ?? []).map((s) => ({ value: s.status, label: friendlyStatusLabel(s.status) })),
+)
+
+const projectOptions = computed(() =>
+  (projects.value ?? []).map((entry) => ({ value: entry.id, label: entry.name })),
 )
 
 const memberOptions = computed(() => {
@@ -328,6 +416,24 @@ const formattedEditDueDate = computed(() => {
           </div>
 
           <div class="flex flex-col gap-2">
+            <Label>Project</Label>
+            <Select v-model="editProjectId">
+              <SelectTrigger class="w-full">
+                <SelectValue placeholder="Select project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="opt in projectOptions"
+                  :key="opt.value"
+                  :value="opt.value"
+                >
+                  {{ opt.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div class="flex flex-col gap-2">
             <Label>Status</Label>
             <Select v-model="editStatus">
               <SelectTrigger class="w-full">
@@ -452,6 +558,23 @@ const formattedEditDueDate = computed(() => {
           @update:open="deleteDialogOpen = $event"
           @deleted="close"
         />
+
+        <AlertDialog :open="moveConfirmationOpen" @update:open="(value) => { moveConfirmationOpen = value }">
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Move task to another project?</AlertDialogTitle>
+              <AlertDialogDescription>
+                The task will stay closed on this project page after the move. If the target project does not support the current status, it will fall back to that project's first status. If the current assignee is not a member of the target project, the task will be reassigned to the target project's owner.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel @click="cancelMoveConfirmation">Cancel</AlertDialogCancel>
+              <AlertDialogAction @click="confirmMove">
+                Move task
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SheetContent>
   </Sheet>

@@ -11,6 +11,7 @@ import {
   boxBelow,
   expectPatchBody,
 } from './helpers'
+import { makeApiProject, makeApiProjectMember, makeApiProjectStatus } from '../src/test/mocks/fixtures'
 
 test.describe('Task lifecycle', () => {
   test('shows tasks grouped by status', async ({ page, mockApi }) => {
@@ -61,6 +62,50 @@ test.describe('Task lifecycle', () => {
     await expect(page.locator('[data-slot="sheet-content"]')).toContainText('Check the changes')
     await expect(page.locator('[data-slot="sheet-content"]')).toContainText('To Do')
     await expect(page.locator('[data-slot="sheet-content"]')).toContainText('Dev User')
+  })
+
+  test('moves a task to another project from task detail', async ({ page, mockApi }) => {
+    await seedMockApi(mockApi, [makeTask('t1', 'Move me', 'todo', 0)], {
+      projects: [
+        makeApiProject({ id: 'p1', name: 'Source Project', owner_id: 'dev-user' }),
+        makeApiProject({ id: 'p2', name: 'Target Project', owner_id: 'target-owner' }),
+      ],
+      members: [
+        makeApiProjectMember({ project_id: 'p1', user_id: 'dev-user', role: 'admin' }),
+        makeApiProjectMember({ project_id: 'p2', user_id: 'dev-user', role: 'modify' }),
+      ],
+      statuses: [
+        makeApiProjectStatus({ project_id: 'p1', status: 'todo', position: 0 }),
+        makeApiProjectStatus({ project_id: 'p1', status: 'in_progress', position: 1 }),
+        makeApiProjectStatus({ project_id: 'p1', status: 'done', position: 2 }),
+        makeApiProjectStatus({ project_id: 'p1', status: 'cancelled', position: 3 }),
+        makeApiProjectStatus({ project_id: 'p2', status: 'todo', position: 0 }),
+        makeApiProjectStatus({ project_id: 'p2', status: 'in_progress', position: 1 }),
+        makeApiProjectStatus({ project_id: 'p2', status: 'done', position: 2 }),
+        makeApiProjectStatus({ project_id: 'p2', status: 'cancelled', position: 3 }),
+      ],
+    })
+    const { getPatchBody } = routePatch(mockApi, 't1')
+
+    await page.goto('/projects/p1')
+    await openTaskDetail(page, 't1')
+    const taskDialog = page.getByRole('dialog', { name: 'Task Details' })
+
+    await page.getByRole('button', { name: /^edit$/i }).click()
+    await taskDialog.getByRole('combobox').nth(0).click()
+    await page.getByRole('option', { name: 'Target Project' }).click()
+    await page.getByRole('button', { name: /^save$/i }).click()
+
+    await expect(page.getByText('Move task to another project?')).toBeVisible()
+    await page.getByRole('button', { name: /move task/i }).click()
+
+    await expectPatchBody(getPatchBody, (body) => {
+      expect(body.project_id).toBe('p2')
+    })
+    await expect(page.getByText('Task moved')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Open task' })).toBeVisible()
+    await expect(page.locator('[data-slot="sheet-content"]')).toBeHidden()
+    await expect(page.getByText('Move me')).toBeHidden()
   })
 
   test('can quick-add a task in a status group', async ({ page, mockApi }) => {
