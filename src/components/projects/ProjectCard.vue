@@ -12,6 +12,8 @@ import { formatDate, formatRelativeDate, isOverdue } from '@/lib/date'
 const props = defineProps<{
   project: Project
   owner: User
+  canModify?: boolean
+  canAdmin?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -58,6 +60,7 @@ const hasDescription = computed(() => props.project.description && props.project
       </span>
       <div class="flex items-center gap-1">
         <Button
+          v-if="canModify"
           variant="ghost"
           size="icon-sm"
           aria-label="Edit project"
@@ -66,6 +69,7 @@ const hasDescription = computed(() => props.project.description && props.project
           <Pencil />
         </Button>
         <Button
+          v-if="canAdmin"
           variant="ghost"
           size="icon-sm"
           aria-label="Delete project"

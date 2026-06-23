@@ -10,6 +10,7 @@ test('project list shows owner name', async ({ page, mockApi }) => {
         id: 'p1',
         name: 'Demo Project',
         owner_id: 'dev-user',
+        effective_role: 'admin',
         created_at: '2026-06-14T15:50:19.34566-04:00',
         updated_at: '2026-06-14T15:50:19.34566-04:00',
       },
