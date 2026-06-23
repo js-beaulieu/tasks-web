@@ -92,7 +92,7 @@ function cloneSeed(seed: MockSeed): MockSeed {
 
 function defaultState(): MockData {
   const me = makeApiUser()
-  const project = makeApiProject({ owner_id: me.id })
+  const project = makeApiProject({ owner_id: me.id, effective_role: 'admin' })
   return {
     me,
     users: [me],
@@ -396,6 +396,7 @@ export function createProject(input: Partial<ApiProject> & Pick<ApiProject, 'nam
     due_date: input.due_date,
     assignee_id: input.assignee_id,
     owner_id: input.owner_id ?? state.me?.id ?? 'dev-user',
+    effective_role: 'admin',
     created_at: now,
     updated_at: now,
   })

@@ -23,7 +23,7 @@ import { useTasks } from '@/composables/useTasks'
 import { useMembers } from '@/composables/members/useMembers'
 import { useMe } from '@/composables/useMe'
 import { useUsersByID } from '@/composables/useUsersByID'
-import { useEffectiveRole } from '@/composables/useEffectiveRole'
+import { useProjectPermissions } from '@/composables/useProjectPermissions'
 import { useCreateTask } from '@/composables/useCreateTask'
 import { useCompleteTask } from '@/composables/useCompleteTask'
 import { useUpdateTask } from '@/composables/useUpdateTask'
@@ -63,11 +63,7 @@ const { tagsByTask, subtaskCounts } = useTaskCardMetadata(
   computed(() => (tasks.value ?? []).map((t) => t.id)),
 )
 
-const { canModify } = useEffectiveRole(
-  computed(() => me.value?.id),
-  project,
-  members,
-)
+const { canModify } = useProjectPermissions(project)
 
 const { view } = useTaskViewPreference()
 const { sortMode, isManualOrder } = useTaskSort()

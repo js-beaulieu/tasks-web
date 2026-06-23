@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Separator } from '@/components/ui/separator'
 import UserDisplay from '@/components/UserDisplay.vue'
-import { useEffectiveRole } from '@/composables/useEffectiveRole'
+import { useProjectPermissions } from '@/composables/useProjectPermissions'
 import { useAddProjectMember } from '@/composables/members/useAddProjectMember'
 import { useMembers } from '@/composables/members/useMembers'
 import { useMe } from '@/composables/useMe'
@@ -37,11 +37,7 @@ const props = defineProps<{
 const { data: project } = useProject(computed(() => props.projectID))
 const { data: members, isLoading } = useMembers(computed(() => props.projectID))
 const { data: me } = useMe()
-const { isAdmin } = useEffectiveRole(
-  computed(() => me.value?.id),
-  project,
-  members,
-)
+const { canAdmin: isAdmin } = useProjectPermissions(project)
 
 const memberUserIDs = computed(() => (members.value ?? []).map((member: ProjectMember) => member.userId))
 const allUserIDs = computed(() => {

@@ -60,9 +60,8 @@ import { useProject } from '@/composables/useProject'
 import { useUpdateTask } from '@/composables/useUpdateTask'
 import { useStatuses } from '@/composables/useStatuses'
 import { useMembers } from '@/composables/members/useMembers'
-import { useMe } from '@/composables/useMe'
 import { useUsersByID } from '@/composables/useUsersByID'
-import { useEffectiveRole } from '@/composables/useEffectiveRole'
+import { useProjectPermissions } from '@/composables/useProjectPermissions'
 import { formatDate, formatRelativeDate, isOverdue } from '@/lib/date'
 import { friendlyStatusLabel } from '@/lib/tasks'
 import type { UpdateTaskInput } from '@/api/tasks'
@@ -80,7 +79,6 @@ const { data: project } = useProject(projectID)
 const { data: projects } = useProjects()
 const { data: statuses } = useStatuses(projectID)
 const { data: members } = useMembers(projectID)
-const { data: me } = useMe()
 
 const userIDs = computed(() => {
   const ids: string[] = []
@@ -93,11 +91,7 @@ const userIDs = computed(() => {
 })
 const { data: usersByID } = useUsersByID(userIDs)
 
-const { canModify } = useEffectiveRole(
-  computed(() => me.value?.id),
-  project,
-  members,
-)
+const { canModify } = useProjectPermissions(project)
 
 const editing = ref(false)
 

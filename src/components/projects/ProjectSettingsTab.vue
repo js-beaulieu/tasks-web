@@ -7,10 +7,8 @@ import ProjectFormDialog from '@/components/projects/ProjectFormDialog.vue'
 import ProjectDeleteDialog from '@/components/projects/ProjectDeleteDialog.vue'
 import { useUpdateProject } from '@/composables/useUpdateProject'
 import { useDeleteProject } from '@/composables/useDeleteProject'
-import { useMembers } from '@/composables/members/useMembers'
-import { useMe } from '@/composables/useMe'
 import { useProject } from '@/composables/useProject'
-import { useEffectiveRole } from '@/composables/useEffectiveRole'
+import { useProjectPermissions } from '@/composables/useProjectPermissions'
 import { formatDate, formatRelativeDate } from '@/lib/date'
 import type { CreateProjectInput } from '@/api/projects'
 
@@ -19,14 +17,8 @@ const props = defineProps<{
 }>()
 
 const { data: project } = useProject(computed(() => props.projectID))
-const { data: members } = useMembers(computed(() => props.projectID))
-const { data: me } = useMe()
 
-const { canModify, isAdmin: isProjectAdmin } = useEffectiveRole(
-  computed(() => me.value?.id),
-  project,
-  members,
-)
+const { canModify, canAdmin: isProjectAdmin } = useProjectPermissions(project)
 
 const updateMutation = useUpdateProject()
 const deleteMutation = useDeleteProject()
