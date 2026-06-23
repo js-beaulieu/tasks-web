@@ -575,3 +575,115 @@ test.describe('Drag handle visibility', () => {
     await expect(page.locator('.drag-handle')).toHaveCount(1)
   })
 })
+
+test.describe('Recurrence editing', () => {
+  test('shows formatted recurrence label in read view', async ({ page, mockApi }) => {
+    await seedMockApi(mockApi, [
+      {
+        ...makeTask('t1', 'Recurring task', 'todo', 0),
+        due_date: '2026-07-01T00:00:00Z',
+        recurrence: 'FREQ=WEEKLY',
+      },
+    ])
+
+    await page.goto('/projects/p1')
+    await openTaskDetail(page, 't1')
+
+    const sheet = page.locator('[data-slot="sheet-content"]')
+    await expect(sheet).toContainText('Every week')
+  })
+
+  test('shows recurrence label on task card', async ({ page, mockApi }) => {
+    await seedMockApi(mockApi, [
+      {
+        ...makeTask('t1', 'Recurring card', 'todo', 0),
+        due_date: '2026-07-01T00:00:00Z',
+        recurrence: 'FREQ=DAILY',
+      },
+    ])
+
+    await page.goto('/projects/p1')
+
+    const card = page.locator('[data-task-id="t1"]')
+    await expect(card).toContainText('Every day')
+  })
+
+  test('edits recurrence via the picker and patches the task', async ({ page, mockApi }) => {
+    await seedMockApi(mockApi, [
+      {
+        ...makeTask('t1', 'Edit me', 'todo', 0),
+        due_date: '2026-07-01T00:00:00Z',
+      },
+    ])
+    const { getPatchBody } = routePatch(mockApi, 't1')
+
+    await page.goto('/projects/p1')
+    await openTaskDetail(page, 't1')
+
+    await page.getByRole('button', { name: /^edit$/i }).click()
+
+    const picker = page.locator('[data-testid="recurrence-picker"]')
+    await picker.locator('[data-slot="select-trigger"]').click()
+    await page.getByRole('option', { name: 'Daily' }).click()
+
+    await page.getByRole('button', { name: /^save$/i }).click()
+
+    await expectPatchBody(getPatchBody, (body) => {
+      expect(body.recurrence).toBe('FREQ=DAILY')
+    })
+  })
+
+  test('clears recurrence via the clear button', async ({ page, mockApi }) => {
+    await seedMockApi(mockApi, [
+      {
+        ...makeTask('t1', 'Clear me', 'todo', 0),
+        due_date: '2026-07-01T00:00:00Z',
+        recurrence: 'FREQ=WEEKLY',
+      },
+    ])
+    const { getPatchBody } = routePatch(mockApi, 't1')
+
+    await page.goto('/projects/p1')
+    await openTaskDetail(page, 't1')
+
+    await page.getByRole('button', { name: /^edit$/i }).click()
+
+    await page.locator('[data-testid="recurrence-clear"]').click()
+
+    await page.getByRole('button', { name: /^save$/i }).click()
+
+    await expectPatchBody(getPatchBody, (body) => {
+      expect(body.recurrence).toBeNull()
+    })
+  })
+
+  test('completing a recurring task shows a toast about next occurrence', async ({ page, mockApi }) => {
+    const nextTask = makeTask('t2', 'Next occurrence', 'todo', 0)
+    await seedMockApi(mockApi, [
+      {
+        ...makeTask('t1', 'Complete me', 'todo', 0),
+        due_date: '2026-07-01T00:00:00Z',
+        recurrence: 'FREQ=DAILY',
+      },
+    ])
+    await mockApi.setCompletionNextTask('t1', nextTask)
+
+    await page.goto('/projects/p1')
+
+    const taskCard = page.locator('[data-task-id="t1"]')
+    await expect(taskCard).toBeVisible()
+    await taskCard.locator('[data-slot="dropdown-menu-trigger"]').click()
+    await page.getByRole('menuitem', { name: /move to done/i }).click()
+
+    await expect(async () => {
+      const requests = await mockApi.getRequestLog()
+      expect(
+        requests.some(
+          (request) => request.method === 'POST' && request.pathname.endsWith('/tasks/t1/complete'),
+        ),
+      ).toBe(true)
+    }).toPass({ timeout: 5000 })
+
+    await expect(page.getByText('Next occurrence created')).toBeVisible({ timeout: 5000 })
+  })
+})

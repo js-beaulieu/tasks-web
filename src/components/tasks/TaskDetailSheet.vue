@@ -25,7 +25,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import {
   Select,
@@ -53,6 +52,7 @@ import {
 import TaskDeleteDialog from '@/components/tasks/TaskDeleteDialog.vue'
 import TaskTagsSection from '@/components/tasks/TaskTagsSection.vue'
 import TaskSubtasksSection from '@/components/tasks/TaskSubtasksSection.vue'
+import RecurrencePicker from '@/components/tasks/RecurrencePicker.vue'
 import UserDisplay from '@/components/UserDisplay.vue'
 import { useProjects } from '@/composables/useProjects'
 import { useTask } from '@/composables/useTask'
@@ -63,7 +63,7 @@ import { useMembers } from '@/composables/members/useMembers'
 import { useUsersByID } from '@/composables/useUsersByID'
 import { useProjectPermissions } from '@/composables/useProjectPermissions'
 import { formatDate, formatRelativeDate, isOverdue } from '@/lib/date'
-import { friendlyStatusLabel } from '@/lib/tasks'
+import { friendlyStatusLabel, formatRecurrence } from '@/lib/tasks'
 import type { UpdateTaskInput } from '@/api/tasks'
 
 const route = useRoute()
@@ -101,6 +101,7 @@ const editProjectId = ref('')
 const editStatus = ref('')
 const editAssigneeId = ref<string>('__none__')
 const editDueDate = ref<DateValue | undefined>()
+const editRecurrence = ref<string | null>(null)
 const dirty = ref(false)
 const moveConfirmationOpen = ref(false)
 const pendingMoveConfirmation = ref<UpdateTaskInput | null>(null)
@@ -116,13 +117,14 @@ function dateValueToISO(dv: DateValue | undefined): string | undefined {
   return new Date(dv.year, dv.month - 1, dv.day).toISOString()
 }
 
-function resetEditFields(t: { projectId: string; name: string; description: string | null; status: string; assigneeId: string | null; dueDate: string | null }) {
+function resetEditFields(t: { projectId: string; name: string; description: string | null; status: string; assigneeId: string | null; dueDate: string | null; recurrence: string | null }) {
 	editProjectId.value = t.projectId
   editName.value = t.name
   editDescription.value = t.description ?? ''
   editStatus.value = t.status
   editAssigneeId.value = t.assigneeId ?? '__none__'
   editDueDate.value = parseISOToDateValue(t.dueDate)
+  editRecurrence.value = t.recurrence
   dirty.value = false
 }
 
@@ -131,7 +133,7 @@ watch(task, (t) => {
   resetEditFields(t)
 }, { immediate: true })
 
-watch([editName, editDescription, editProjectId, editStatus, editAssigneeId, editDueDate], () => {
+watch([editName, editDescription, editProjectId, editStatus, editAssigneeId, editDueDate, editRecurrence], () => {
   if (!task.value) return
   const projectChanged = editProjectId.value !== task.value.projectId
   const nameChanged = editName.value !== task.value.name
@@ -139,7 +141,8 @@ watch([editName, editDescription, editProjectId, editStatus, editAssigneeId, edi
   const statusChanged = editStatus.value !== task.value.status
   const assigneeChanged = editAssigneeId.value !== (task.value.assigneeId ?? '__none__')
   const dueDateChanged = dateValueToISO(editDueDate.value) !== (task.value.dueDate ?? undefined)
-  dirty.value = projectChanged || nameChanged || descChanged || statusChanged || assigneeChanged || dueDateChanged
+  const recurrenceChanged = editRecurrence.value !== (task.value.recurrence ?? null)
+  dirty.value = projectChanged || nameChanged || descChanged || statusChanged || assigneeChanged || dueDateChanged || recurrenceChanged
 })
 
 const updateMutation = useUpdateTask()
@@ -160,6 +163,10 @@ function buildUpdateInput(): UpdateTaskInput {
   const newDueDate = dateValueToISO(editDueDate.value)
   if (newDueDate !== (task.value.dueDate ?? undefined)) {
     input.dueDate = newDueDate
+  }
+
+  if (editRecurrence.value !== (task.value.recurrence ?? null)) {
+    input.recurrence = editRecurrence.value
   }
 
   return input
@@ -210,6 +217,12 @@ function save() {
   if (!task.value || !dirty.value) return
 
   const input = buildUpdateInput()
+
+  if (input.recurrence && !input.dueDate && !task.value.dueDate) {
+    toast.error('Recurring tasks require a due date')
+    return
+  }
+
   if (input.projectId && input.projectId !== task.value.projectId) {
     pendingMoveConfirmation.value = input
     moveConfirmationOpen.value = true
@@ -356,8 +369,7 @@ const formattedEditDueDate = computed(() => {
             <span v-if="task.recurrence" class="text-muted-foreground">Recurrence</span>
             <span v-if="task.recurrence" class="flex items-center gap-2">
               <RotateCw class="h-3.5 w-3.5" />
-              {{ task.recurrence }}
-              <Badge variant="secondary" class="text-xs">Edit in Phase 11</Badge>
+              {{ formatRecurrence(task.recurrence) }}
             </span>
           </div>
 
@@ -499,11 +511,12 @@ const formattedEditDueDate = computed(() => {
             </Popover>
           </div>
 
-          <div v-if="task.recurrence" class="flex items-center gap-2 text-sm text-muted-foreground">
-            <RotateCw class="h-4 w-4" />
-            <span>Recurring: {{ task.recurrence }}</span>
-            <Badge variant="secondary" class="text-xs">Edit in Phase 11</Badge>
-          </div>
+          <RecurrencePicker
+            :model-value="editRecurrence"
+            :due-date="dateValueToISO(editDueDate) ?? task.dueDate"
+            data-testid="recurrence-picker"
+            @update:model-value="(v: string | null) => editRecurrence = v"
+          />
 
           <Separator />
 
