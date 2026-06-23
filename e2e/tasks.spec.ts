@@ -164,11 +164,10 @@ test.describe('Task lifecycle', () => {
 
     await expect(page.locator('button', { hasText: /^Done/ })).toBeVisible()
 
-    const expandButton = page.getByRole('button', { name: /Expand/ })
-    await expandButton.click({ timeout: 1000 }).catch(() => undefined)
+    await page.getByText('Expand (1)').click()
 
     await expect(page.getByText('Done task')).toBeVisible()
-    await expect(page.getByText('Expand (0)')).toBeHidden()
+    await expect(page.getByText('Expand (1)')).toBeHidden()
   })
 
   test('drag handles are visible when sort is Manual', async ({ page, mockApi }) => {
@@ -438,9 +437,11 @@ test.describe('Board: cross-column moves', () => {
     await enableManualSort(page)
 
     const handleA = page.locator('[data-task-id="t1"] .drag-handle')
-    const doneColumn = page.locator('[data-status="done"]')
     await expect(handleA).toBeVisible()
 
+    await page.locator('button', { hasText: /^Done/ }).click()
+
+    const doneColumn = page.locator('[data-status="done"]')
     await slowDrag(page, boxCenter((await handleA.boundingBox())!), boxCenter((await doneColumn.boundingBox())!))
 
     await expectPatchBody(getPatchBody, (body) => {

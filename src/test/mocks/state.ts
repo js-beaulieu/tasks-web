@@ -265,6 +265,39 @@ export function listProjectStatuses(projectID: string): ApiProjectStatus[] {
     .map(cloneStatus)
 }
 
+export function addProjectStatus(projectID: string, status: string): { created: ApiProjectStatus; conflict: boolean } {
+  const existing = state.statuses.find(
+    (s) => s.project_id === projectID && s.status === status,
+  )
+  if (existing) {
+    return { created: cloneStatus(existing), conflict: true }
+  }
+
+  const position = state.statuses.filter((s) => s.project_id === projectID).length
+  const created = makeApiProjectStatus({ project_id: projectID, status, position })
+  state.statuses.push(cloneStatus(created))
+  return { created: cloneStatus(created), conflict: false }
+}
+
+export function deleteProjectStatus(projectID: string, status: string): { notFound: boolean; conflict: boolean } {
+  const existing = state.statuses.find(
+    (s) => s.project_id === projectID && s.status === status,
+  )
+  if (!existing) {
+    return { notFound: true, conflict: false }
+  }
+
+  const inUse = state.tasks.some(
+    (task) => task.project_id === projectID && task.status === status,
+  )
+  if (inUse) {
+    return { notFound: false, conflict: true }
+  }
+
+  state.statuses = state.statuses.filter((s) => !(s.project_id === projectID && s.status === status))
+  return { notFound: false, conflict: false }
+}
+
 export function listProjectMembers(projectID: string): ApiProjectMember[] {
   const explicitMembers = state.members.filter((member) => member.project_id === projectID)
   const project = state.projects.find((entry) => entry.id === projectID)
