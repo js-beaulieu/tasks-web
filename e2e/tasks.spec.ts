@@ -427,10 +427,9 @@ test.describe('Board: cross-column moves', () => {
     })
   })
 
-  test('drag task to done column sends PATCH with done status', async ({ page, mockApi }) => {
+  test('drag task to done column calls complete endpoint', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100)]
     await seedMockApi(mockApi, tasks)
-    const { getPatchBody } = routePatch(mockApi, 't1')
 
     await page.goto('/projects/p1')
     await page.getByRole('button', { name: /board/i }).click()
@@ -444,9 +443,14 @@ test.describe('Board: cross-column moves', () => {
     const doneColumn = page.locator('[data-status="done"]')
     await slowDrag(page, boxCenter((await handleA.boundingBox())!), boxCenter((await doneColumn.boundingBox())!))
 
-    await expectPatchBody(getPatchBody, (body) => {
-      expect(body.status).toBe('done')
-    })
+    await expect(async () => {
+      const requests = await mockApi.getRequestLog()
+      expect(
+        requests.some(
+          (request) => request.method === 'POST' && request.pathname.endsWith('/tasks/t1/complete'),
+        ),
+      ).toBe(true)
+    }).toPass({ timeout: 5000 })
   })
 })
 

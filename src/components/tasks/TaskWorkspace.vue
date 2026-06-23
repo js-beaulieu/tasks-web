@@ -216,6 +216,10 @@ function handleMoveStatus(taskID: string, status: string) {
 }
 
 function handleReorder(taskID: string, newIndex: number, newStatus?: string) {
+  if (newStatus && newStatus === doneStatus.value) {
+    handleCompleteTask(taskID)
+    return
+  }
   const input: { position: number; status?: string } = { position: newIndex }
   if (newStatus) input.status = newStatus
   updateMutation.mutate(
