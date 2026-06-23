@@ -8,6 +8,7 @@ export interface Project {
   dueDate?: string
   ownerId: string
   assigneeId?: string
+  effectiveRole?: string
   createdAt: string
   updatedAt: string
 }
@@ -27,6 +28,7 @@ function fromApiProject(project: ApiProject): Project {
     dueDate: project.due_date,
     ownerId: project.owner_id,
     assigneeId: project.assignee_id,
+    effectiveRole: project.effective_role,
     createdAt: project.created_at,
     updatedAt: project.updated_at,
   }

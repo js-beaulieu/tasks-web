@@ -67,8 +67,8 @@ test.describe('Task lifecycle', () => {
   test('moves a task to another project from task detail', async ({ page, mockApi }) => {
     await seedMockApi(mockApi, [makeTask('t1', 'Move me', 'todo', 0)], {
       projects: [
-        makeApiProject({ id: 'p1', name: 'Source Project', owner_id: 'dev-user' }),
-        makeApiProject({ id: 'p2', name: 'Target Project', owner_id: 'target-owner' }),
+        makeApiProject({ id: 'p1', name: 'Source Project', owner_id: 'dev-user', effective_role: 'admin' }),
+        makeApiProject({ id: 'p2', name: 'Target Project', owner_id: 'target-owner', effective_role: 'modify' }),
       ],
       members: [
         makeApiProjectMember({ project_id: 'p1', user_id: 'dev-user', role: 'admin' }),

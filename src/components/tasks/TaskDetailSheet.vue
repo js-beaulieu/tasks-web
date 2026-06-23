@@ -261,7 +261,9 @@ const statusOptions = computed(() =>
 )
 
 const projectOptions = computed(() =>
-  (projects.value ?? []).map((entry) => ({ value: entry.id, label: entry.name })),
+  (projects.value ?? [])
+    .filter((entry) => entry.id === projectID.value || entry.effectiveRole === 'modify' || entry.effectiveRole === 'admin')
+    .map((entry) => ({ value: entry.id, label: entry.name })),
 )
 
 const memberOptions = computed(() => {
