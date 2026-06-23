@@ -2,12 +2,14 @@ import { test as base, expect } from '@playwright/test'
 import type { ApiProjectMember, ApiTask } from '../src/api/types'
 import {
   addProjectMember,
+  addProjectStatus,
   addTaskTag,
   captureRequest,
   completeTask,
   createProject,
   createTask,
   deleteProject,
+  deleteProjectStatus,
   deleteTask,
   getLastRequest,
   getMockData,
@@ -201,12 +203,19 @@ async function handleApiRoute(route: import('@playwright/test').Route): Promise<
     if (method === 'GET') return fulfillJson(route, listProjectStatuses(projectID))
     if (method === 'POST') {
       const body = jsonBody(route) as { status: string }
-      const statuses = listProjectStatuses(projectID)
-      return fulfillJson(route, { project_id: projectID, status: body.status, position: statuses.length })
+      const result = addProjectStatus(projectID, body.status)
+      if (result.conflict) return fulfillProblem(route, 409, 'Conflict', 'status already exists')
+      return fulfillJson(route, result.created, 201)
     }
   }
 
   if (pathname.match(/^\/projects\/[^/]+\/statuses\/[^/]+$/) && method === 'DELETE') {
+    const statusMatch = pathname.match(/^\/projects\/([^/]+)\/statuses\/([^/]+)$/)
+    const projectID = decodeURIComponent(statusMatch![1]!)
+    const status = decodeURIComponent(statusMatch![2]!)
+    const result = deleteProjectStatus(projectID, status)
+    if (result.notFound) return fulfillProblem(route, 404, 'Not Found')
+    if (result.conflict) return fulfillProblem(route, 409, 'Conflict', 'status is in use by tasks')
     return fulfillNoContent(route)
   }
 

@@ -30,7 +30,7 @@ const emit = defineEmits<{
 
 const scrollContainer = ref<HTMLElement | null>(null)
 
-const defaultCollapsedStatuses = new Set<string>()
+const defaultCollapsedStatuses = new Set<string>(['done', 'cancelled'])
 const collapsedColumns = ref<Set<string>>(new Set(defaultCollapsedStatuses))
 
 function toggleColumn(status: string) {

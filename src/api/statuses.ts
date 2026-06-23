@@ -1,4 +1,4 @@
-import { apiList } from './client'
+import { apiClient, apiList } from './client'
 import type { ApiProjectStatus } from './types'
 
 export interface ProjectStatus {
@@ -20,4 +20,22 @@ export async function listProjectStatuses(projectID: string): Promise<ProjectSta
     `projects/${encodeURIComponent(projectID)}/statuses`,
   )
   return statuses.map(fromApiProjectStatus)
+}
+
+export async function createProjectStatus(projectID: string, status: string): Promise<ProjectStatus> {
+  const created = await apiClient<ApiProjectStatus>(
+    `projects/${encodeURIComponent(projectID)}/statuses`,
+    {
+      method: 'POST',
+      body: { status },
+    },
+  )
+  return fromApiProjectStatus(created)
+}
+
+export async function deleteProjectStatus(projectID: string, status: string): Promise<void> {
+  await apiClient<void>(
+    `projects/${encodeURIComponent(projectID)}/statuses/${encodeURIComponent(status)}`,
+    { method: 'DELETE' },
+  )
 }

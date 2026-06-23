@@ -2,12 +2,14 @@ import { HttpResponse, http } from 'msw'
 import type { ApiProjectMember, ApiTask } from '@/api/types'
 import {
   addProjectMember,
+  addProjectStatus,
   addTaskTag,
   captureRequest,
   completeTask,
   createProject,
   createTask,
   deleteProject,
+  deleteProjectStatus,
   deleteTask,
   getMockData,
   getProject,
@@ -161,17 +163,18 @@ export const handlers = [
   http.post('*/:base/projects/:projectID/statuses', async ({ request, params }) => {
     await captureRequest(request)
     const body = (await request.json()) as { status: string }
-    const statuses = listProjectStatuses(String(params.projectID))
-    const created = {
-      project_id: String(params.projectID),
-      status: body.status,
-      position: statuses.length,
+    const result = addProjectStatus(String(params.projectID), body.status)
+    if (result.conflict) {
+      return problem(409, 'Conflict', 'status already exists')
     }
-    return ok(created)
+    return ok(result.created, 201)
   }),
 
-  http.delete('*/:base/projects/:projectID/statuses/:status', async ({ request }) => {
+  http.delete('*/:base/projects/:projectID/statuses/:status', async ({ request, params }) => {
     await captureRequest(request)
+    const result = deleteProjectStatus(String(params.projectID), String(params.status))
+    if (result.notFound) return problem(404, 'Not Found')
+    if (result.conflict) return problem(409, 'Conflict', 'status is in use by tasks')
     return noContent()
   }),
 
