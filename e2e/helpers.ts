@@ -18,6 +18,7 @@ export const PROJECT = {
   name: 'Task Project',
   description: 'Testing tasks',
   owner_id: 'dev-user',
+  effective_role: 'admin',
   created_at: '2026-06-14T15:50:19Z',
   updated_at: '2026-06-14T15:50:19Z',
 }

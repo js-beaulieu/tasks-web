@@ -440,6 +440,7 @@ export interface components {
             created_at: string;
             description?: string;
             due_date?: string;
+            effective_role?: string;
             id: string;
             name: string;
             owner_id: string;

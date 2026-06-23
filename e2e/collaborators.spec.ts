@@ -1,6 +1,8 @@
 import { test, expect } from './msw'
 import { ME, PROJECT, STATUSES } from './helpers'
 
+const READ_PROJECT = { ...PROJECT, effective_role: 'read' }
+
 test.describe('Collaborators', () => {
   test('admin can add a collaborator from user search', async ({ page, mockApi }) => {
     await mockApi.prepare({
@@ -118,7 +120,7 @@ test.describe('Collaborators', () => {
           created_at: '2026-01-02T00:00:00Z',
         },
       ],
-      projects: [PROJECT],
+      projects: [READ_PROJECT],
       statuses: STATUSES,
       members: [{ project_id: 'p1', user_id: 'u2', role: 'read' }],
       tasks: [],

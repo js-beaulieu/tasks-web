@@ -53,6 +53,14 @@ const projectsWithOwners = computed(() => {
   }))
 })
 
+function canModifyProject(role: string | undefined): boolean {
+  return role === 'modify' || role === 'admin'
+}
+
+function canAdminProject(role: string | undefined): boolean {
+  return role === 'admin'
+}
+
 const sortedProjects = computed(() => {
   const list = [...projectsWithOwners.value]
   switch (sort.value) {
@@ -233,6 +241,8 @@ const accessError = computed(() => {
         :key="item.project.id"
         :project="item.project"
         :owner="item.owner"
+        :can-modify="canModifyProject(item.project.effectiveRole)"
+        :can-admin="canAdminProject(item.project.effectiveRole)"
         @edit="openEdit"
         @delete="openDelete"
       />
