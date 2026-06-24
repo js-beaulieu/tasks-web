@@ -24,7 +24,6 @@ import {
   removeProjectMember,
   removeTaskTag,
   searchUsers,
-  setTaskTags,
   updateProjectMember,
   updateProject,
   updateTask,
@@ -260,7 +259,3 @@ export const handlers = [
   }),
 
 ]
-
-export function primeTaskTags(taskID: string, tags: string[]): void {
-  setTaskTags(taskID, tags)
-}
