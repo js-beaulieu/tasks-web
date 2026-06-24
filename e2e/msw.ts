@@ -5,7 +5,6 @@ import {
   addProjectStatus,
   addTaskTag,
   captureRequest,
-  completeTask,
   createProject,
   createTask,
   deleteProject,
@@ -28,7 +27,7 @@ import {
   removeTaskTag,
   resetMockData,
   searchUsers,
-  setCompletionNextTask,
+  setUpdateNextTask,
   updateProjectMember,
   updateTask,
   type MockData,
@@ -42,7 +41,7 @@ export interface MockApi {
   getState(): Promise<MockData>
   getLastRequest(): Promise<MockRequestLogEntry | undefined>
   getRequestLog(): Promise<MockRequestLogEntry[]>
-  setCompletionNextTask(taskID: string, nextTask: ApiTask | null): Promise<void>
+  setUpdateNextTask(taskID: string, nextTask: ApiTask | null): Promise<void>
 }
 
 function isMockApiPath(pathname: string): boolean {
@@ -249,20 +248,12 @@ async function handleApiRoute(route: import('@playwright/test').Route): Promise<
       return task ? fulfillJson(route, task) : fulfillProblem(route, 404, 'Not Found')
     }
     if (method === 'PATCH') {
-      const task = updateTask(taskID, (jsonBody(route) ?? {}) as Partial<ApiTask>)
-      return task ? fulfillJson(route, task) : fulfillProblem(route, 404, 'Not Found')
+      const result = updateTask(taskID, (jsonBody(route) ?? {}) as Partial<ApiTask>)
+      return result ? fulfillJson(route, result) : fulfillProblem(route, 404, 'Not Found')
     }
     if (method === 'DELETE') {
       return deleteTask(taskID) ? fulfillNoContent(route) : fulfillProblem(route, 404, 'Not Found')
     }
-  }
-
-  const completeMatch = pathname.match(/^\/tasks\/([^/]+)\/complete$/)
-  if (completeMatch && method === 'POST') {
-    const taskID = decodeURIComponent(completeMatch[1]!)
-    const body = jsonBody(route) as { done_status: string }
-    const result = completeTask(taskID, body.done_status)
-    return result ? fulfillJson(route, result) : fulfillProblem(route, 404, 'Not Found')
   }
 
   const taskTagsMatch = pathname.match(/^\/tasks\/([^/]+)\/tags$/)
@@ -337,8 +328,8 @@ export const test = base.extend<{ mockApi: MockApi }>({
         return getRequestLog()
       },
 
-      async setCompletionNextTask(taskID, nextTask) {
-        setCompletionNextTask(taskID, nextTask)
+      async setUpdateNextTask(taskID, nextTask) {
+        setUpdateNextTask(taskID, nextTask)
       },
     }
 

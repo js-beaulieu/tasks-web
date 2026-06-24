@@ -31,8 +31,8 @@ test.describe('Task lifecycle', () => {
     await expect(page.getByText('Buy groceries')).toBeVisible()
     await expect(page.getByText('Write report')).toBeVisible()
 
-    await expect(page.locator('button', { hasText: /To Do/ })).toBeVisible()
-    await expect(page.locator('button', { hasText: /In Progress/ })).toBeVisible()
+    await expect(page.getByText('To Do')).toBeVisible()
+    await expect(page.getByText('In Progress')).toBeVisible()
   })
 
   test('can switch between list and board view', async ({ page, mockApi }) => {
@@ -78,11 +78,9 @@ test.describe('Task lifecycle', () => {
         makeApiProjectStatus({ project_id: 'p1', status: 'todo', position: 0 }),
         makeApiProjectStatus({ project_id: 'p1', status: 'in_progress', position: 1 }),
         makeApiProjectStatus({ project_id: 'p1', status: 'done', position: 2 }),
-        makeApiProjectStatus({ project_id: 'p1', status: 'cancelled', position: 3 }),
         makeApiProjectStatus({ project_id: 'p2', status: 'todo', position: 0 }),
         makeApiProjectStatus({ project_id: 'p2', status: 'in_progress', position: 1 }),
         makeApiProjectStatus({ project_id: 'p2', status: 'done', position: 2 }),
-        makeApiProjectStatus({ project_id: 'p2', status: 'cancelled', position: 3 }),
       ],
     })
     const { getPatchBody } = routePatch(mockApi, 't1')
@@ -124,11 +122,11 @@ test.describe('Task lifecycle', () => {
     await seedMockApi(mockApi, [makeTask('t1', 'Visible task', 'todo', 0)])
 
     await page.goto('/projects/p1')
+    await page.getByRole('button', { name: /list/i }).click()
 
-    const todoGroup = page.locator('button', { hasText: /To Do/ })
+    const todoGroup = page.getByText('To Do')
     await expect(todoGroup).toBeVisible()
     await expect(page.getByText('Visible task')).toBeVisible()
-    await expect(todoGroup).toContainText('1')
   })
 
   test('task cards render in board view', async ({ page, mockApi }) => {
@@ -156,18 +154,13 @@ test.describe('Task lifecycle', () => {
     await expect(addButton).toBeDisabled()
   })
 
-  test('board view collapsed columns expand with tasks, not Add task button', async ({ page, mockApi }) => {
+  test('board view shows done tasks without collapsing', async ({ page, mockApi }) => {
     await seedMockApi(mockApi, [makeTask('t1', 'Done task', 'done', 0)])
 
     await page.goto('/projects/p1')
     await page.getByRole('button', { name: /board/i }).click()
 
-    await expect(page.locator('button', { hasText: /^Done/ })).toBeVisible()
-
-    await page.getByText('Expand (1)').click()
-
     await expect(page.getByText('Done task')).toBeVisible()
-    await expect(page.getByText('Expand (1)')).toBeHidden()
   })
 
   test('drag handles are visible when sort is Manual', async ({ page, mockApi }) => {
@@ -427,7 +420,7 @@ test.describe('Board: cross-column moves', () => {
     })
   })
 
-  test('drag task to done column calls complete endpoint', async ({ page, mockApi }) => {
+  test('drag task to done column sends PATCH with status done', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100)]
     await seedMockApi(mockApi, tasks)
 
@@ -438,8 +431,6 @@ test.describe('Board: cross-column moves', () => {
     const handleA = page.locator('[data-task-id="t1"] .drag-handle')
     await expect(handleA).toBeVisible()
 
-    await page.locator('button', { hasText: /^Done/ }).click()
-
     const doneColumn = page.locator('[data-status="done"]')
     await slowDrag(page, boxCenter((await handleA.boundingBox())!), boxCenter((await doneColumn.boundingBox())!))
 
@@ -447,7 +438,10 @@ test.describe('Board: cross-column moves', () => {
       const requests = await mockApi.getRequestLog()
       expect(
         requests.some(
-          (request) => request.method === 'POST' && request.pathname.endsWith('/tasks/t1/complete'),
+          (request) =>
+            request.method === 'PATCH' &&
+            request.pathname.endsWith('/tasks/t1') &&
+            (request.body as Record<string, unknown>).status === 'done',
         ),
       ).toBe(true)
     }).toPass({ timeout: 5000 })
@@ -532,7 +526,7 @@ test.describe('Menu-based movement', () => {
     })
   })
 
-  test('move task to done via dropdown calls complete endpoint', async ({ page, mockApi }) => {
+  test('move task to done via dropdown sends PATCH with status done', async ({ page, mockApi }) => {
     const tasks = [makeTask('t1', 'A', 'todo', 100)]
     await seedMockApi(mockApi, tasks)
 
@@ -547,7 +541,10 @@ test.describe('Menu-based movement', () => {
       const requests = await mockApi.getRequestLog()
       expect(
         requests.some(
-          (request) => request.method === 'POST' && request.pathname.endsWith('/tasks/t1/complete'),
+          (request) =>
+            request.method === 'PATCH' &&
+            request.pathname.endsWith('/tasks/t1') &&
+            (request.body as Record<string, unknown>).status === 'done',
         ),
       ).toBe(true)
     }).toPass({ timeout: 5000 })
@@ -670,7 +667,7 @@ test.describe('Recurrence editing', () => {
         recurrence: 'FREQ=DAILY',
       },
     ])
-    await mockApi.setCompletionNextTask('t1', nextTask)
+    await mockApi.setUpdateNextTask('t1', nextTask)
 
     await page.goto('/projects/p1')
 
@@ -683,7 +680,10 @@ test.describe('Recurrence editing', () => {
       const requests = await mockApi.getRequestLog()
       expect(
         requests.some(
-          (request) => request.method === 'POST' && request.pathname.endsWith('/tasks/t1/complete'),
+          (request) =>
+            request.method === 'PATCH' &&
+            request.pathname.endsWith('/tasks/t1') &&
+            (request.body as Record<string, unknown>).status === 'done',
         ),
       ).toBe(true)
     }).toPass({ timeout: 5000 })

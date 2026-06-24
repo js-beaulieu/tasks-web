@@ -20,7 +20,6 @@ test.describe('Status admin', () => {
     await expect(page.getByText('To Do', { exact: true })).toBeVisible()
     await expect(page.getByText('In Progress', { exact: true })).toBeVisible()
     await expect(page.getByText('Done', { exact: true })).toBeVisible()
-    await expect(page.getByText('Cancelled', { exact: true })).toBeVisible()
 
     await page.getByRole('button', { name: /add status/i }).click()
     await page.getByPlaceholder(/Status value/i).fill('review')
@@ -122,8 +121,8 @@ test.describe('Status admin', () => {
   })
 })
 
-test.describe('Board view collapsed columns', () => {
-  test('done and cancelled are collapsed by default in board view', async ({ page, mockApi }) => {
+test.describe('Board view columns', () => {
+  test('done and cancelled columns are always expanded in board view', async ({ page, mockApi }) => {
     await mockApi.prepare({
       me: ME,
       users: USERS,
@@ -154,11 +153,6 @@ test.describe('Board view collapsed columns', () => {
     await page.getByRole('button', { name: /board/i }).click()
 
     await expect(page.getByText('Active task')).toBeVisible()
-    await expect(page.getByText('Finished task')).toBeHidden()
-
-    await expect(page.getByText('Expand (1)')).toBeVisible()
-
-    await page.locator('button', { hasText: /^Done/ }).click()
     await expect(page.getByText('Finished task')).toBeVisible()
   })
 })

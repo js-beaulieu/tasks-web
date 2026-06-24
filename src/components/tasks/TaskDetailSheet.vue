@@ -195,7 +195,8 @@ function commitSave(input: UpdateTaskInput) {
   updateMutation.mutate(
     { taskID: task.value.id, input, sourceProjectID: projectID.value },
     {
-      onSuccess: (updated) => {
+      onSuccess: (data) => {
+        const updated = data.task
         moveConfirmationOpen.value = false
         pendingMoveConfirmation.value = null
         if (updated.projectId !== projectID.value) {

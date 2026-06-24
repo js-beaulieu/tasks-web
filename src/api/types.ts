@@ -8,7 +8,9 @@ export type ApiProject = components['schemas']['Project']
 export type ApiTask = components['schemas']['Task']
 export type ApiProjectMember = components['schemas']['ProjectMember']
 export type ApiProjectStatus = components['schemas']['ProjectStatus']
-export type ApiCompleteTaskResp = components['schemas']['CompleteTaskResp']
+export type ApiUpdateTaskResp = Omit<components['schemas']['UpdateTaskResp'], 'next'> & {
+  next: components['schemas']['Task'] | null
+}
 export type ApiRemoveMemberOutput = components['schemas']['RemoveMemberOutputBody']
 export type ApiError = components['schemas']['ErrorModel']
 
@@ -17,7 +19,6 @@ export type ApiUpdateProjectBody = components['schemas']['UpdateProjectBody']
 export type ApiCreateTaskBody = components['schemas']['CreateTaskBody']
 export type ApiCreateSubtaskBody = components['schemas']['CreateSubtaskBody']
 export type ApiUpdateTaskBody = components['schemas']['UpdateTaskBody']
-export type ApiCompleteTaskBody = components['schemas']['CompleteTaskBody']
 export type ApiAddMemberBody = components['schemas']['AddMemberBody']
 export type ApiUpdateMemberBody = components['schemas']['UpdateMemberBody']
 export type ApiAddStatusBody = components['schemas']['AddStatusBody']

@@ -1,13 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { updateTask, type UpdateTaskInput, type Task } from '@/api/tasks'
+import { toast } from 'vue-sonner'
+import { updateTask, type UpdateTaskInput, type UpdateTaskResponse } from '@/api/tasks'
 import { showErrorToast } from '@/lib/error'
 
 export function useUpdateTask() {
   const queryClient = useQueryClient()
 
-  return useMutation<Task, Error, { taskID: string; input: UpdateTaskInput; sourceProjectID?: string }>({
+  return useMutation<UpdateTaskResponse, Error, { taskID: string; input: UpdateTaskInput; sourceProjectID?: string }>({
     mutationFn: ({ taskID, input }) => updateTask(taskID, input),
-    onSuccess: (updated, variables) => {
+    onSuccess: (data, variables) => {
+      const updated = data.task
       const sourceProjectID = variables.sourceProjectID
 
       queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId, 'tasks'] })
@@ -27,6 +29,12 @@ export function useUpdateTask() {
       queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId] })
       queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId, 'members'] })
       queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId, 'statuses'] })
+
+      if (data.next) {
+        toast.success('Task completed', {
+          description: 'Next occurrence created.',
+        })
+      }
     },
     onError: (error) => {
       showErrorToast('Could not update task', error)

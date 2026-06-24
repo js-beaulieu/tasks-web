@@ -5,7 +5,6 @@ import {
   addProjectStatus,
   addTaskTag,
   captureRequest,
-  completeTask,
   createProject,
   createTask,
   deleteProject,
@@ -210,8 +209,8 @@ export const handlers = [
   http.patch('*/:base/tasks/:taskID', async ({ request, params }) => {
     await captureRequest(request)
     const patch = (await request.json()) as Partial<ApiTask>
-    const task = updateTask(String(params.taskID), patch)
-    return task ? ok(task) : problem(404, 'Not Found')
+    const result = updateTask(String(params.taskID), patch)
+    return result ? ok(result) : problem(404, 'Not Found')
   }),
 
   http.delete('*/:base/tasks/:taskID', async ({ request, params }) => {
@@ -219,12 +218,7 @@ export const handlers = [
     return deleteTask(String(params.taskID)) ? noContent() : problem(404, 'Not Found')
   }),
 
-  http.post('*/:base/tasks/:taskID/complete', async ({ request, params }) => {
-    await captureRequest(request)
-    const body = (await request.json()) as { done_status: string }
-    const result = completeTask(String(params.taskID), body.done_status)
-    return result ? ok(result) : problem(404, 'Not Found')
-  }),
+  
 
   http.get('*/:base/tasks/:taskID/tags', async ({ request, params }) => {
     await captureRequest(request)

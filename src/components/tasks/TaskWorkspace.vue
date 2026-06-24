@@ -25,7 +25,6 @@ import { useMe } from '@/composables/useMe'
 import { useUsersByID } from '@/composables/useUsersByID'
 import { useProjectPermissions } from '@/composables/useProjectPermissions'
 import { useCreateTask } from '@/composables/useCreateTask'
-import { useCompleteTask } from '@/composables/useCompleteTask'
 import { useUpdateTask } from '@/composables/useUpdateTask'
 import { useTaskViewPreference } from '@/composables/useTaskViewPreference'
 import { useTaskSort } from '@/composables/useTaskSort'
@@ -130,7 +129,7 @@ const filteredTasks = computed(() => {
 
 const groupedTasks = computed(() => {
   const statusOrder: string[] = (statuses.value ?? []).map((s: ProjectStatus) => s.status)
-  const defaultStatuses = ['todo', 'in_progress', 'done', 'cancelled']
+  const defaultStatuses = ['todo', 'in_progress', 'done']
   const allStatuses = uniq([...statusOrder, ...defaultStatuses])
 
   const grouped = groupBy(filteredTasks.value, (t) => t.status)
@@ -157,7 +156,6 @@ const firstStatus = computed(() => {
 
 const createMutation = useCreateTask()
 const isAdding = computed(() => createMutation.isPending.value)
-const completeMutation = useCompleteTask()
 const updateMutation = useUpdateTask()
 
 function handleQuickAdd(status: string, name: string) {
@@ -179,11 +177,10 @@ function openTask(taskID: string) {
 }
 
 function handleCompleteTask(taskID: string) {
-  completeMutation.mutate(
+  updateMutation.mutate(
     {
       taskID,
-      doneStatus: doneStatus.value,
-      projectID: props.projectID,
+      input: { status: doneStatus.value },
     },
     {
       onError: () => {
@@ -201,25 +198,17 @@ function handleUncompleteTask(taskID: string) {
 }
 
 function handleMoveStatus(taskID: string, status: string) {
-  if (status === doneStatus.value) {
-    handleCompleteTask(taskID)
-  } else {
-    updateMutation.mutate(
-      { taskID, input: { status } },
-      {
-        onError: () => {
-          dragResetKey.value++
-        },
+  updateMutation.mutate(
+    { taskID, input: { status } },
+    {
+      onError: () => {
+        dragResetKey.value++
       },
-    )
-  }
+    },
+  )
 }
 
 function handleReorder(taskID: string, newIndex: number, newStatus?: string) {
-  if (newStatus && newStatus === doneStatus.value) {
-    handleCompleteTask(taskID)
-    return
-  }
   const input: { position: number; status?: string } = { position: newIndex }
   if (newStatus) input.status = newStatus
   updateMutation.mutate(
