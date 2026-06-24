@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import TaskCard from './TaskCard.vue'
 import type { Task } from '@/api/tasks'
 import type { ProjectStatus } from '@/api/statuses'
-import type { UsersByIDMap } from '@/composables/useUsersByID'
+import type { UsersByIDMap } from '@/composables/users/useUsersByID'
 import { friendlyStatusLabel } from '@/lib/tasks'
 
 const props = defineProps<{

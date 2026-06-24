@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import { computed } from 'vue'
-import { useMe } from '@/composables/useMe'
+import { useMe } from '@/composables/users/useMe'
 import { useAccessError } from '@/composables/useAccessError'
 import { LogOut } from '@lucide/vue'
 import { Button } from '@/components/ui/button'

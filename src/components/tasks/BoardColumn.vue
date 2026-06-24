@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import TaskCard from '@/components/tasks/TaskCard.vue'
 import type { Task } from '@/api/tasks'
 import type { ProjectStatus } from '@/api/statuses'
-import type { UsersByIDMap } from '@/composables/useUsersByID'
+import type { UsersByIDMap } from '@/composables/users/useUsersByID'
 
 const props = defineProps<{
   status: string

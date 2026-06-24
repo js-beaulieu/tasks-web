@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Sun, Moon } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
-import { useColorMode } from '@/composables/useColorMode'
+import { useColorMode } from '@/composables/_ui/useColorMode'
 
 const { mode, toggle } = useColorMode()
 </script>

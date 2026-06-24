@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
-import { useDeleteTask } from '@/composables/useDeleteTask'
+import { useDeleteTask } from '@/composables/tasks/useDeleteTask'
 import type { Task } from '@/api/tasks'
 
 const props = defineProps<{

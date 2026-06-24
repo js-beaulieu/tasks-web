@@ -12,7 +12,7 @@ import {
 import UserDisplay from '@/components/UserDisplay.vue'
 import type { Task } from '@/api/tasks'
 import type { ProjectStatus } from '@/api/statuses'
-import type { UsersByIDMap } from '@/composables/useUsersByID'
+import type { UsersByIDMap } from '@/composables/users/useUsersByID'
 import { formatDate, isOverdue } from '@/lib/date'
 import { friendlyStatusLabel, formatRecurrence } from '@/lib/tasks'
 
