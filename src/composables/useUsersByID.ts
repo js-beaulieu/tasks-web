@@ -3,6 +3,7 @@ import { keyBy, uniq } from 'es-toolkit'
 import { computed, toValue } from 'vue'
 import type { MaybeRef } from 'vue'
 import { getUsersByIDs, type User } from '@/api/users'
+import { qk } from '@/lib/queryKeys'
 
 export type UsersByIDMap = Record<string, User>
 
@@ -15,7 +16,7 @@ export function useUsersByID(userIDs: MaybeRef<string[]>) {
   })
 
   return useQuery(() => ({
-    queryKey: ['users', 'by-id', normalized.value],
+    queryKey: qk.usersByID(normalized.value),
     queryFn: async (): Promise<UsersByIDMap> => {
       const users = await getUsersByIDs(normalized.value)
       return keyBy(users, (user) => user.id)
