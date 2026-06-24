@@ -1,4 +1,4 @@
-import { apiClient, apiList } from './client'
+import { apiClient, apiList, apiPath } from './client'
 import type {
   ApiTask,
   ApiCreateTaskBody,
@@ -103,26 +103,26 @@ export async function listProjectTasks(
   if (filters?.assigneeId) params.set('assignee_id', filters.assigneeId)
   if (filters?.tag) params.set('tag', filters.tag)
   const query = params.toString()
-  const path = `projects/${encodeURIComponent(projectID)}/tasks${query ? `?${query}` : ''}`
+  const path = `${apiPath('projects', projectID, 'tasks')}${query ? `?${query}` : ''}`
   const tasks = await apiList<ApiTask>(path)
   return tasks.map(fromApiTask)
 }
 
 export async function getTask(taskID: string): Promise<Task> {
-  const { data: task } = await apiClient<ApiTask>(`tasks/${encodeURIComponent(taskID)}`)
-  return fromApiTask(task)
+  const { data } = await apiClient<ApiTask>(apiPath('tasks', taskID))
+  return fromApiTask(data)
 }
 
 export async function createTask(projectID: string, input: CreateTaskInput): Promise<Task> {
-  const { data: task } = await apiClient<ApiTask>(`projects/${encodeURIComponent(projectID)}/tasks`, {
+  const { data } = await apiClient<ApiTask>(apiPath('projects', projectID, 'tasks'), {
     method: 'POST',
     body: toApiCreateBody(input),
   })
-  return fromApiTask(task)
+  return fromApiTask(data)
 }
 
 export async function updateTask(taskID: string, input: UpdateTaskInput): Promise<UpdateTaskResult> {
-  const { data, headers } = await apiClient<ApiTask>(`tasks/${encodeURIComponent(taskID)}`, {
+  const { data, headers } = await apiClient<ApiTask>(apiPath('tasks', taskID), {
     method: 'PATCH',
     body: toApiUpdateBody(input),
   })
@@ -134,11 +134,11 @@ export async function updateTask(taskID: string, input: UpdateTaskInput): Promis
 }
 
 export async function deleteTask(taskID: string): Promise<void> {
-  await apiClient<void>(`tasks/${encodeURIComponent(taskID)}`, { method: 'DELETE' })
+  await apiClient<void>(apiPath('tasks', taskID), { method: 'DELETE' })
 }
 
 export async function listSubtasks(taskID: string): Promise<Task[]> {
-  const tasks = await apiList<ApiTask>(`tasks/${encodeURIComponent(taskID)}/tasks`)
+  const tasks = await apiList<ApiTask>(apiPath('tasks', taskID, 'tasks'))
   return tasks.map(fromApiTask)
 }
 
@@ -147,27 +147,27 @@ export async function createSubtask(
   input: CreateTaskInput,
 ): Promise<Task> {
   const body = toApiCreateBody(input) as ApiCreateSubtaskBody
-  const { data: task } = await apiClient<ApiTask>(`tasks/${encodeURIComponent(parentTaskID)}/tasks`, {
+  const { data } = await apiClient<ApiTask>(apiPath('tasks', parentTaskID, 'tasks'), {
     method: 'POST',
     body,
   })
-  return fromApiTask(task)
+  return fromApiTask(data)
 }
 
 export async function listTaskTags(taskID: string): Promise<string[]> {
-  return apiList<string>(`tasks/${encodeURIComponent(taskID)}/tags`)
+  return apiList<string>(apiPath('tasks', taskID, 'tags'))
 }
 
 export async function addTaskTag(taskID: string, tag: string): Promise<void> {
   const body: ApiAddTagBody = { tag }
-  await apiClient<void>(`tasks/${encodeURIComponent(taskID)}/tags`, {
+  await apiClient<void>(apiPath('tasks', taskID, 'tags'), {
     method: 'POST',
     body,
   })
 }
 
 export async function removeTaskTag(taskID: string, tag: string): Promise<void> {
-  await apiClient<void>(`tasks/${encodeURIComponent(taskID)}/tags/${encodeURIComponent(tag)}`, {
+  await apiClient<void>(apiPath('tasks', taskID, 'tags', tag), {
     method: 'DELETE',
   })
 }
