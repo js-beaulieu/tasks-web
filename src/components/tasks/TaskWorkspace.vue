@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { groupBy, uniq, orderBy } from 'es-toolkit'
-import { Loader2, XCircle, LayoutGrid, List, ArrowUpDown, Filter } from '@lucide/vue'
+import { LayoutGrid, List, ArrowUpDown, Filter } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -29,7 +29,10 @@ import { useUpdateTask } from '@/composables/useUpdateTask'
 import { useTaskViewPreference } from '@/composables/useTaskViewPreference'
 import { useTaskSort } from '@/composables/useTaskSort'
 import { useTaskCardMetadata } from '@/composables/useTaskCardMetadata'
-import { ApiError } from '@/api/client'
+import { useAccessError } from '@/composables/useAccessError'
+import LoadingState from '@/components/shared/LoadingState.vue'
+import ErrorAlert from '@/components/shared/ErrorAlert.vue'
+import EmptyState from '@/components/shared/EmptyState.vue'
 import { isOverdue } from '@/lib/date'
 import type { Task } from '@/api/tasks'
 import type { ProjectStatus } from '@/api/statuses'
@@ -231,23 +234,7 @@ function handleDeleteTask(taskID: string) {
   deleteTaskID.value = taskID
 }
 
-const accessError = computed(() => {
-  if (!isError.value || !error.value) return null
-  const status = error.value instanceof ApiError ? error.value.problem.status : undefined
-  if (status === 404) {
-    return { title: 'Project not found', message: 'This project does not exist or you no longer have access to it.' }
-  }
-  if (status === 403) {
-    return { title: 'Access denied', message: 'You do not have permission to view this project.' }
-  }
-  if (status === 401) {
-    return { title: 'Session expired', message: 'Your session has expired. Sign in again to continue.' }
-  }
-  return {
-    title: 'Could not load project',
-    message: error.value instanceof Error ? error.value.message : 'Something went wrong while loading this project.',
-  }
-})
+const accessError = useAccessError(isError, error, 'project')
 
 const sortLabel = computed(() => {
   if (sortMode.value === 'dueDate') return 'Due date'
@@ -257,28 +244,13 @@ const sortLabel = computed(() => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div
-      v-if="isLoading"
-      class="flex flex-col items-center gap-3 py-12"
-    >
-      <Loader2 class="h-8 w-8 animate-spin text-primary" />
-      <p class="text-sm text-muted-foreground">Loading tasks…</p>
-    </div>
+    <LoadingState v-if="isLoading" message="Loading tasks…" />
 
-    <div
+    <ErrorAlert
       v-else-if="accessError"
-      class="mx-auto max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-4"
-      role="alert"
-      aria-live="assertive"
-    >
-      <div class="flex items-start gap-3">
-        <XCircle class="mt-0.5 h-5 w-5 text-destructive" />
-        <div>
-          <h2 class="font-semibold text-destructive">{{ accessError.title }}</h2>
-          <p class="mt-1 text-sm text-destructive/90">{{ accessError.message }}</p>
-        </div>
-      </div>
-    </div>
+      :title="accessError.title"
+      :message="accessError.message"
+    />
 
     <div
       v-else
@@ -439,18 +411,19 @@ const sortLabel = computed(() => {
           />
         </div>
 
-        <div
+        <EmptyState
           v-if="groupedTasks.length === 0 && project"
-          class="py-12 text-center text-muted-foreground"
+          message="No tasks yet."
         >
-          <p class="text-sm">No tasks yet.</p>
-          <p
-            v-if="canModify"
-            class="mt-1 text-xs"
-          >
-            Create your first task to get started.
-          </p>
-        </div>
+          <template #action>
+            <p
+              v-if="canModify"
+              class="mt-1 text-xs"
+            >
+              Create your first task to get started.
+            </p>
+          </template>
+        </EmptyState>
       </div>
 
       <TaskDeleteDialog

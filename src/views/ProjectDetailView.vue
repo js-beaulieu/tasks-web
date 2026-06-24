@@ -7,10 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useProject } from '@/composables/useProject'
 import { useMembers } from '@/composables/members/useMembers'
 import { useUsersByID } from '@/composables/useUsersByID'
+import { useAccessError } from '@/composables/useAccessError'
 import TaskWorkspace from '@/components/tasks/TaskWorkspace.vue'
 import ProjectMembersTab from '@/components/projects/ProjectMembersTab.vue'
 import ProjectSettingsTab from '@/components/projects/ProjectSettingsTab.vue'
-import { ApiError } from '@/api/client'
+import LoadingState from '@/components/shared/LoadingState.vue'
+import ErrorAlert from '@/components/shared/ErrorAlert.vue'
 import { formatRelativeDate } from '@/lib/date'
 
 const route = useRoute()
@@ -32,23 +34,7 @@ const activeTab = computed({
   },
 })
 
-const accessError = computed(() => {
-  if (!isError.value || !error.value) return null
-  const status = error.value instanceof ApiError ? error.value.problem.status : undefined
-  if (status === 404) {
-    return { title: 'Project not found', message: 'This project does not exist or you no longer have access to it.' }
-  }
-  if (status === 403) {
-    return { title: 'Access denied', message: 'You do not have permission to view this project.' }
-  }
-  if (status === 401) {
-    return { title: 'Session expired', message: 'Your session has expired. Sign in again to continue.' }
-  }
-  return {
-    title: 'Could not load project',
-    message: error.value instanceof Error ? error.value.message : 'Something went wrong while loading this project.',
-  }
-})
+const accessError = useAccessError(isError, error, 'project')
 </script>
 
 <template>
@@ -62,28 +48,13 @@ const accessError = computed(() => {
       </Button>
     </div>
 
-    <div
-      v-if="isLoading"
-      class="flex flex-col items-center gap-3 py-12"
-    >
-      <div class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      <p class="text-sm text-muted-foreground">Loading project…</p>
-    </div>
+    <LoadingState v-if="isLoading" message="Loading project…" />
 
-    <div
+    <ErrorAlert
       v-else-if="accessError"
-      class="mx-auto max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-4"
-      role="alert"
-      aria-live="assertive"
-    >
-      <div class="flex items-start gap-3">
-        <div class="mt-0.5 h-5 w-5 text-destructive">✕</div>
-        <div>
-          <h2 class="font-semibold text-destructive">{{ accessError.title }}</h2>
-          <p class="mt-1 text-sm text-destructive/90">{{ accessError.message }}</p>
-        </div>
-      </div>
-    </div>
+      :title="accessError.title"
+      :message="accessError.message"
+    />
 
     <div
       v-else-if="project"

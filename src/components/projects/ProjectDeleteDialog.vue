@@ -1,15 +1,5 @@
 <script setup lang="ts">
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
-import { Loader2 } from '@lucide/vue'
+import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
 import type { Project } from '@/api/projects'
 
 defineProps<{
@@ -25,29 +15,17 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <AlertDialog
+  <ConfirmDialog
     :open="open"
+    title="Delete project?"
+    confirm-label="Delete"
+    :is-pending="isPending"
     @update:open="emit('update:open', $event)"
+    @confirm="emit('confirm')"
   >
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>Delete project?</AlertDialogTitle>
-        <AlertDialogDescription>
-          This will permanently delete <strong>{{ project.name }}</strong>.
-          This action cannot be undone.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <Button
-          variant="destructive"
-          :disabled="isPending"
-          @click="emit('confirm')"
-        >
-          <Loader2 v-if="isPending" class="size-4 animate-spin" />
-          Delete
-        </Button>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
+    <template #description>
+      This will permanently delete <strong>{{ project.name }}</strong>.
+      This action cannot be undone.
+    </template>
+  </ConfirmDialog>
 </template>

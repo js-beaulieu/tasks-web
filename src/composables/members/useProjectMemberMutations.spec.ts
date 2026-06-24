@@ -1,23 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
-import { mount } from '@vue/test-utils'
-import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { makeApiProject, makeApiProjectMember, makeApiTask } from '@/test/mocks/fixtures'
 import { getLastRequest, getMockData, seedMockData } from '@/test/mocks/state'
+import { mountWithQuery } from '@/test/mountWithQuery'
 import { useAddProjectMember } from './useAddProjectMember'
 import { useRemoveProjectMember } from './useRemoveProjectMember'
 import { useUpdateProjectMember } from './useUpdateProjectMember'
-
-function mountWithQuery(component: ReturnType<typeof defineComponent>) {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false, staleTime: 5 * 60 * 1000 } },
-  })
-  return mount(component, {
-    global: {
-      plugins: [[VueQueryPlugin, { queryClient }]],
-    },
-  })
-}
 
 describe('project member mutations', () => {
   beforeEach(() => {

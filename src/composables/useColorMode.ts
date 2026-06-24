@@ -1,19 +1,9 @@
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
+import { useUIStore } from '@/stores/ui'
 
-type ColorMode = 'light' | 'dark'
+export type ColorMode = 'light' | 'dark'
 
-const MODE_KEY = 'tasks-web-color-scheme'
-
-function getInitialMode(): ColorMode {
-  // The inline script in index.html already resolves the user's saved
-  // preference (or system preference) and sets the `.dark` class before
-  // the app paints. The composable only needs to read that resolved state,
-  // avoiding duplication of the storage/media-query logic.
-  if (typeof document === 'undefined') return 'light'
-  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-}
-
-function apply(mode: ColorMode): void {
+function apply(mode: 'light' | 'dark'): void {
   const root = document.documentElement
   if (mode === 'dark') {
     root.classList.add('dark')
@@ -24,24 +14,28 @@ function apply(mode: ColorMode): void {
 }
 
 export function useColorMode() {
-  const mode = ref<ColorMode>(getInitialMode())
+  const store = useUIStore()
+
+  const mode = computed({
+    get: () => store.theme,
+    set: (v: 'light' | 'dark') => store.setTheme(v),
+  })
 
   function toggle() {
-    mode.value = mode.value === 'dark' ? 'light' : 'dark'
+    store.toggleTheme()
   }
 
-  watch(mode, (newMode) => {
+  watch(() => store.theme, (newMode) => {
     apply(newMode)
-    localStorage.setItem(MODE_KEY, newMode)
   })
 
   onMounted(() => {
-    apply(mode.value)
+    apply(store.theme)
   })
 
   return {
     mode,
     toggle,
-    isDark: computed(() => mode.value === 'dark'),
+    isDark: computed(() => store.isDark),
   }
 }
