@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import StatusSelect from '@/components/tasks/StatusSelect.vue'
 import { useSubtasks } from '@/composables/subtasks/useSubtasks'
 import { useCreateSubtask } from '@/composables/subtasks/useCreateSubtask'
 import { useConvertToSubtask } from '@/composables/subtasks/useConvertToSubtask'
@@ -44,10 +45,6 @@ const parentOptions = computed(() =>
   (projectTasks.value ?? [])
     .filter((t) => t.id !== props.task.id)
     .map((t) => ({ value: t.id, label: t.name })),
-)
-
-const statusOptions = computed(() =>
-  props.statuses.map((s) => ({ value: s.status, label: friendlyStatusLabel(s.status) })),
 )
 
 const firstStatus = computed(() => {
@@ -165,20 +162,11 @@ function detach() {
           :data-testid="'subtask-name-input'"
           @keydown="(e: KeyboardEvent) => { if (e.key === 'Enter') submitSubtask() }"
         />
-        <Select v-model="newSubtaskStatus">
-          <SelectTrigger class="h-8 w-32 text-xs">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem
-              v-for="opt in statusOptions"
-              :key="opt.value"
-              :value="opt.value"
-            >
-              {{ opt.label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <StatusSelect
+          v-model="newSubtaskStatus"
+          :statuses="statuses"
+          placeholder="Status"
+        />
         <Button
           size="sm"
           class="h-8 shrink-0"

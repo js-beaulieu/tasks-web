@@ -41,6 +41,7 @@ import TaskDeleteDialog from '@/components/tasks/TaskDeleteDialog.vue'
 import TaskTagsSection from '@/components/tasks/TaskTagsSection.vue'
 import TaskSubtasksSection from '@/components/tasks/TaskSubtasksSection.vue'
 import RecurrencePicker from '@/components/tasks/RecurrencePicker.vue'
+import StatusSelect from '@/components/tasks/StatusSelect.vue'
 import UserDisplay from '@/components/UserDisplay.vue'
 import LoadingState from '@/components/shared/LoadingState.vue'
 import { useProjects } from '@/composables/projects/useProjects'
@@ -93,10 +94,6 @@ const {
 } = useTaskEditState(task)
 
 const updateMutation = useUpdateTask()
-
-const statusOptions = computed(() =>
-  (statuses.value ?? []).map((s) => ({ value: s.status, label: friendlyStatusLabel(s.status) })),
-)
 
 const projectOptions = computed(() =>
   (projects.value ?? [])
@@ -316,12 +313,7 @@ function close() {
 
           <div class="flex flex-col gap-2">
             <Label>Status</Label>
-            <Select v-model="editStatus">
-              <SelectTrigger class="w-full"><SelectValue placeholder="Select status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
-              </SelectContent>
-            </Select>
+            <StatusSelect v-model="editStatus" :statuses="statuses ?? []" />
           </div>
 
           <div class="flex flex-col gap-2">
