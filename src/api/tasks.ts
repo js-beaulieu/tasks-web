@@ -1,10 +1,9 @@
-import { apiClient, apiList } from './client'
+import { apiClient, apiClientWithHeaders, apiList } from './client'
 import type {
   ApiTask,
   ApiCreateTaskBody,
   ApiCreateSubtaskBody,
   ApiUpdateTaskBody,
-  ApiUpdateTaskResp,
   ApiAddTagBody,
 } from './types'
 
@@ -45,9 +44,9 @@ export interface UpdateTaskInput {
   recurrence?: string | null
 }
 
-export interface UpdateTaskResponse {
+export interface UpdateTaskResult {
   task: Task
-  next: Task | null
+  nextOccurrenceId: string | null
 }
 
 function fromApiTask(t: ApiTask): Task {
@@ -122,14 +121,15 @@ export async function createTask(projectID: string, input: CreateTaskInput): Pro
   return fromApiTask(task)
 }
 
-export async function updateTask(taskID: string, input: UpdateTaskInput): Promise<UpdateTaskResponse> {
-  const resp = await apiClient<ApiUpdateTaskResp>(`tasks/${encodeURIComponent(taskID)}`, {
+export async function updateTask(taskID: string, input: UpdateTaskInput): Promise<UpdateTaskResult> {
+  const { data, headers } = await apiClientWithHeaders<ApiTask>(`tasks/${encodeURIComponent(taskID)}`, {
     method: 'PATCH',
     body: toApiUpdateBody(input),
   })
+  const nextId = headers.get('X-Next-Occurrence-Id') || null
   return {
-    task: fromApiTask(resp.task),
-    next: resp.next ? fromApiTask(resp.next) : null,
+    task: fromApiTask(data),
+    nextOccurrenceId: nextId,
   }
 }
 

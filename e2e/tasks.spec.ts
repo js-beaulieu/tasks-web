@@ -667,7 +667,7 @@ test.describe('Recurrence editing', () => {
         recurrence: 'FREQ=DAILY',
       },
     ])
-    await mockApi.setUpdateNextTask('t1', nextTask)
+    await mockApi.setUpdateNextOccurrenceId('t1', nextTask)
 
     await page.goto('/projects/p1')
 

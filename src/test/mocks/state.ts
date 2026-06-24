@@ -33,7 +33,7 @@ export interface MockData {
   requestLog: MockRequestLogEntry[]
   nextProjectID: string
   nextTaskID: string
-  updateNextTasks: Record<string, ApiTask | null | undefined>
+  nextOccurrenceTasks: Record<string, ApiTask | null>
 }
 
 export interface MockSeed {
@@ -46,7 +46,7 @@ export interface MockSeed {
   taskTags?: Record<string, string[]>
   nextProjectID?: string
   nextTaskID?: string
-  updateNextTasks?: Record<string, ApiTask | null | undefined>
+  nextOccurrenceTasks?: Record<string, ApiTask | null>
 }
 
 const DEFAULT_STATUSES = ['todo', 'in_progress', 'done']
@@ -82,9 +82,9 @@ function cloneSeed(seed: MockSeed): MockSeed {
     taskTags: seed.taskTags ? Object.fromEntries(Object.entries(seed.taskTags).map(([key, value]) => [key, [...value]])) : undefined,
     nextProjectID: seed.nextProjectID,
     nextTaskID: seed.nextTaskID,
-    updateNextTasks: seed.updateNextTasks
+    nextOccurrenceTasks: seed.nextOccurrenceTasks
       ? Object.fromEntries(
-          Object.entries(seed.updateNextTasks).map(([key, value]) => [key, value ? cloneTask(value) : value]),
+          Object.entries(seed.nextOccurrenceTasks).map(([key, value]) => [key, value ? cloneTask(value) : null]),
         )
       : undefined,
   }
@@ -106,7 +106,7 @@ function defaultState(): MockData {
     requestLog: [],
     nextProjectID: 'p-new',
     nextTaskID: 't-new',
-    updateNextTasks: {},
+    nextOccurrenceTasks: {},
   }
 }
 
@@ -130,8 +130,8 @@ function assignState(next: MockData): void {
   }))
   state.nextProjectID = next.nextProjectID
   state.nextTaskID = next.nextTaskID
-  state.updateNextTasks = Object.fromEntries(
-    Object.entries(next.updateNextTasks).map(([key, value]) => [key, value ? cloneTask(value) : value]),
+  state.nextOccurrenceTasks = Object.fromEntries(
+    Object.entries(next.nextOccurrenceTasks).map(([key, value]) => [key, value ? cloneTask(value) : null]),
   )
 }
 
@@ -150,9 +150,9 @@ export function resetMockData(seed: MockSeed = {}): void {
     requestLog: [],
     nextProjectID: seed.nextProjectID ?? base.nextProjectID,
     nextTaskID: seed.nextTaskID ?? base.nextTaskID,
-    updateNextTasks: seed.updateNextTasks
+    nextOccurrenceTasks: seed.nextOccurrenceTasks
       ? Object.fromEntries(
-          Object.entries(seed.updateNextTasks).map(([key, value]) => [key, value ? cloneTask(value) : value]),
+          Object.entries(seed.nextOccurrenceTasks).map(([key, value]) => [key, value ? cloneTask(value) : null]),
         )
       : {},
   }
@@ -189,8 +189,8 @@ export function getMockData(): MockData {
     })),
     nextProjectID: state.nextProjectID,
     nextTaskID: state.nextTaskID,
-    updateNextTasks: Object.fromEntries(
-      Object.entries(state.updateNextTasks).map(([key, value]) => [key, value ? cloneTask(value) : value]),
+    nextOccurrenceTasks: Object.fromEntries(
+      Object.entries(state.nextOccurrenceTasks).map(([key, value]) => [key, value ? cloneTask(value) : null]),
     ),
   }
 }
@@ -464,7 +464,7 @@ export function deleteProject(projectID: string): boolean {
   state.tasks = state.tasks.filter((task) => task.project_id !== projectID)
   for (const taskID of taskIDs) {
     delete state.taskTags[taskID]
-    delete state.updateNextTasks[taskID]
+    delete state.nextOccurrenceTasks[taskID]
   }
   return true
 }
@@ -495,7 +495,7 @@ export function createTask(
   return cloneTask(task)
 }
 
-export function updateTask(taskID: string, patch: Partial<ApiTask>): { task: ApiTask; next: ApiTask | null } | undefined {
+export function updateTask(taskID: string, patch: Partial<ApiTask>): { task: ApiTask; nextOccurrenceId: string | null } | undefined {
   const task = state.tasks.find((entry) => entry.id === taskID)
   if (!task) {
     return undefined
@@ -564,16 +564,17 @@ export function updateTask(taskID: string, patch: Partial<ApiTask>): { task: Api
 
   const updated = cloneTask(task)
 
-  let next: ApiTask | null = null
+  let nextOccurrenceId: string | null = null
   if (patch.status !== undefined && patch.status !== previousStatus && patch.status === 'done' && task.recurrence && task.due_date) {
-    next = state.updateNextTasks[taskID] ?? null
-    if (next) {
-      state.tasks.push(cloneTask(next))
+    const nextOccurrenceTask = state.nextOccurrenceTasks[taskID] ?? null
+    if (nextOccurrenceTask) {
+      state.tasks.push(cloneTask(nextOccurrenceTask))
+      nextOccurrenceId = nextOccurrenceTask.id
     }
   }
-  delete state.updateNextTasks[taskID]
+  delete state.nextOccurrenceTasks[taskID]
 
-  return { task: updated, next: next ? cloneTask(next) : null }
+  return { task: updated, nextOccurrenceId }
 }
 
 export function deleteTask(taskID: string): boolean {
@@ -592,12 +593,12 @@ export function deleteTask(taskID: string): boolean {
 
   state.tasks.splice(index, 1)
   delete state.taskTags[taskID]
-  delete state.updateNextTasks[taskID]
+  delete state.nextOccurrenceTasks[taskID]
   return true
 }
 
-export function setUpdateNextTask(taskID: string, nextTask: ApiTask | null): void {
-  state.updateNextTasks[taskID] = nextTask ? cloneTask(nextTask) : null
+export function setUpdateNextOccurrenceId(taskID: string, nextOccurrenceTask: ApiTask | null): void {
+  state.nextOccurrenceTasks[taskID] = nextOccurrenceTask ? cloneTask(nextOccurrenceTask) : null
 }
 
 export function getProject(projectID: string): ApiProject | undefined {

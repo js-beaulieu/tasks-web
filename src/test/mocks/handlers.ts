@@ -210,7 +210,12 @@ export const handlers = [
     await captureRequest(request)
     const patch = (await request.json()) as Partial<ApiTask>
     const result = updateTask(String(params.taskID), patch)
-    return result ? ok(result) : problem(404, 'Not Found')
+    if (!result) return problem(404, 'Not Found')
+    const headers = new Headers()
+    if (result.nextOccurrenceId) {
+      headers.set('X-Next-Occurrence-Id', result.nextOccurrenceId)
+    }
+    return new Response(JSON.stringify(result.task), { status: 200, headers })
   }),
 
   http.delete('*/:base/tasks/:taskID', async ({ request, params }) => {

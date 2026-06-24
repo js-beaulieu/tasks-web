@@ -56,6 +56,11 @@ function isJsonBody(body: unknown): boolean {
 }
 
 export async function apiClient<T>(path: string, options: ApiRequestInit = {}): Promise<T> {
+  const { data } = await apiClientWithHeaders<T>(path, options)
+  return data
+}
+
+export async function apiClientWithHeaders<T>(path: string, options: ApiRequestInit = {}): Promise<{data: T, headers: Headers}> {
   const url = buildUrl(path)
   const { body, headers: originalHeaders, timeout = DEFAULT_TIMEOUT_MS, ...rest } = options
   const headers = new Headers(originalHeaders as HeadersInit | undefined)
@@ -102,7 +107,7 @@ export async function apiClient<T>(path: string, options: ApiRequestInit = {}): 
   }
 
   if (response.status === 204) {
-    return undefined as T
+    return { data: undefined as T, headers: response.headers }
   }
 
   const contentType = response.headers.get('content-type') ?? ''
@@ -117,7 +122,7 @@ export async function apiClient<T>(path: string, options: ApiRequestInit = {}): 
   }
 
   const data = (await response.json()) as unknown
-  return data as T
+  return { data: data as T, headers: response.headers }
 }
 
 export async function apiList<T>(path: string, options?: ApiRequestInit): Promise<T[]> {

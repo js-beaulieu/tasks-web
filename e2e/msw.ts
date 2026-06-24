@@ -27,7 +27,7 @@ import {
   removeTaskTag,
   resetMockData,
   searchUsers,
-  setUpdateNextTask,
+  setUpdateNextOccurrenceId,
   updateProjectMember,
   updateTask,
   type MockData,
@@ -41,7 +41,7 @@ export interface MockApi {
   getState(): Promise<MockData>
   getLastRequest(): Promise<MockRequestLogEntry | undefined>
   getRequestLog(): Promise<MockRequestLogEntry[]>
-  setUpdateNextTask(taskID: string, nextTask: ApiTask | null): Promise<void>
+  setUpdateNextOccurrenceId(taskID: string, nextOccurrenceTask: ApiTask | null): Promise<void>
 }
 
 function isMockApiPath(pathname: string): boolean {
@@ -81,10 +81,10 @@ function jsonBody(route: import('@playwright/test').Route): unknown {
   return request.postDataJSON()
 }
 
-async function fulfillJson(route: import('@playwright/test').Route, body: unknown, status = 200): Promise<void> {
+async function fulfillJson(route: import('@playwright/test').Route, body: unknown, extraHeaders?: Record<string, string>, status = 200): Promise<void> {
   await route.fulfill({
     status,
-    contentType: 'application/json',
+    headers: { 'Content-Type': 'application/json', ...extraHeaders },
     body: JSON.stringify(body),
   })
 }
@@ -204,7 +204,7 @@ async function handleApiRoute(route: import('@playwright/test').Route): Promise<
       const body = jsonBody(route) as { status: string }
       const result = addProjectStatus(projectID, body.status)
       if (result.conflict) return fulfillProblem(route, 409, 'Conflict', 'status already exists')
-      return fulfillJson(route, result.created, 201)
+      return fulfillJson(route, result.created, undefined, 201)
     }
   }
 
@@ -249,7 +249,12 @@ async function handleApiRoute(route: import('@playwright/test').Route): Promise<
     }
     if (method === 'PATCH') {
       const result = updateTask(taskID, (jsonBody(route) ?? {}) as Partial<ApiTask>)
-      return result ? fulfillJson(route, result) : fulfillProblem(route, 404, 'Not Found')
+      if (!result) return fulfillProblem(route, 404, 'Not Found')
+      const headers: Record<string, string> = {}
+      if (result.nextOccurrenceId) {
+        headers['X-Next-Occurrence-Id'] = result.nextOccurrenceId
+      }
+      return fulfillJson(route, result.task, headers)
     }
     if (method === 'DELETE') {
       return deleteTask(taskID) ? fulfillNoContent(route) : fulfillProblem(route, 404, 'Not Found')
@@ -328,8 +333,8 @@ export const test = base.extend<{ mockApi: MockApi }>({
         return getRequestLog()
       },
 
-      async setUpdateNextTask(taskID, nextTask) {
-        setUpdateNextTask(taskID, nextTask)
+      async setUpdateNextOccurrenceId(taskID, nextOccurrenceId) {
+        setUpdateNextOccurrenceId(taskID, nextOccurrenceId)
       },
     }
 

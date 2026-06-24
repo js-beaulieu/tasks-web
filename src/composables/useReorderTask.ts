@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { updateTask, type UpdateTaskResponse } from '@/api/tasks'
+import { updateTask, type UpdateTaskResult } from '@/api/tasks'
 import { showErrorToast } from '@/lib/error'
 
 export interface ReorderTaskVariables {
@@ -11,7 +11,7 @@ export interface ReorderTaskVariables {
 export function useReorderTask() {
   const queryClient = useQueryClient()
 
-  return useMutation<UpdateTaskResponse, Error, ReorderTaskVariables>({
+  return useMutation<UpdateTaskResult, Error, ReorderTaskVariables>({
     mutationFn: ({ taskID, position }) => updateTask(taskID, { position }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['projects', variables.projectID, 'tasks'] })

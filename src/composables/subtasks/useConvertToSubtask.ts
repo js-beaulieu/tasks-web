@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { updateTask, type UpdateTaskResponse } from '@/api/tasks'
+import { updateTask, type UpdateTaskResult } from '@/api/tasks'
 import { showErrorToast } from '@/lib/error'
 
 export function useConvertToSubtask() {
   const queryClient = useQueryClient()
 
-  return useMutation<UpdateTaskResponse, Error, { taskID: string; parentTaskID: string; projectID: string; oldParentID?: string | null }>({
+  return useMutation<UpdateTaskResult, Error, { taskID: string; parentTaskID: string; projectID: string; oldParentID?: string | null }>({
     mutationFn: ({ taskID, parentTaskID }) => updateTask(taskID, { parentId: parentTaskID }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks', variables.taskID] })

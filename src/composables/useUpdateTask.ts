@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
-import { updateTask, type UpdateTaskInput, type UpdateTaskResponse } from '@/api/tasks'
+import { updateTask, type UpdateTaskInput, type UpdateTaskResult } from '@/api/tasks'
 import { showErrorToast } from '@/lib/error'
 
 export function useUpdateTask() {
   const queryClient = useQueryClient()
 
-  return useMutation<UpdateTaskResponse, Error, { taskID: string; input: UpdateTaskInput; sourceProjectID?: string }>({
+  return useMutation<UpdateTaskResult, Error, { taskID: string; input: UpdateTaskInput; sourceProjectID?: string }>({
     mutationFn: ({ taskID, input }) => updateTask(taskID, input),
     onSuccess: (data, variables) => {
       const updated = data.task
@@ -30,7 +30,7 @@ export function useUpdateTask() {
       queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId, 'members'] })
       queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId, 'statuses'] })
 
-      if (data.next) {
+      if (data.nextOccurrenceId) {
         toast.success('Task completed', {
           description: 'Next occurrence created.',
         })

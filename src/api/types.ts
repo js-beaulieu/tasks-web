@@ -1,16 +1,10 @@
 import type { components } from './types.gen'
 
-// Convenience aliases over the generated OpenAPI types.
-// The underlying shapes come from `pnpm gen:api` (see types.gen.ts).
-
 export type ApiUser = components['schemas']['User']
 export type ApiProject = components['schemas']['Project']
 export type ApiTask = components['schemas']['Task']
 export type ApiProjectMember = components['schemas']['ProjectMember']
 export type ApiProjectStatus = components['schemas']['ProjectStatus']
-export type ApiUpdateTaskResp = Omit<components['schemas']['UpdateTaskResp'], 'next'> & {
-  next: components['schemas']['Task'] | null
-}
 export type ApiRemoveMemberOutput = components['schemas']['RemoveMemberOutputBody']
 export type ApiError = components['schemas']['ErrorModel']
 

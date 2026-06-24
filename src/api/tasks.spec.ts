@@ -3,7 +3,7 @@ import { makeApiTask } from '@/test/mocks/fixtures'
 import {
   getLastRequest,
   seedMockData,
-  setUpdateNextTask,
+  setUpdateNextOccurrenceId,
 } from '@/test/mocks/state'
 import {
   listProjectTasks,
@@ -116,7 +116,7 @@ describe('updateTask', () => {
     expect(getLastRequest()?.body).toEqual({ status: 'in_progress', position: 5 })
     expect(result.task.status).toBe('in_progress')
     expect(result.task.position).toBe(5)
-    expect(result.next).toBeNull()
+    expect(result.nextOccurrenceId).toBeNull()
   })
 
   it('sends null parentId to detach subtask', async () => {
@@ -141,7 +141,7 @@ describe('updateTask', () => {
     expect(result.task.projectId).toBe('p2')
   })
 
-  it('maps next task for recurring completion', async () => {
+  it('maps next occurrence ID for recurring completion', async () => {
     seedMockData({
       tasks: [
         {
@@ -152,12 +152,11 @@ describe('updateTask', () => {
       ],
     })
     const nextTask = makeApiTask({ id: 't2', project_id: 'p1', status: 'todo', owner_id: 'u1' })
-    setUpdateNextTask('t1', nextTask)
+    setUpdateNextOccurrenceId('t1', nextTask)
 
     const result = await updateTask('t1', { status: 'done' })
 
-    expect(result.next).not.toBeNull()
-    expect(result.next?.id).toBe('t2')
+    expect(result.nextOccurrenceId).toBe('t2')
   })
 })
 
