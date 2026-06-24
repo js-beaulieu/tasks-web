@@ -18,7 +18,7 @@ function fromApiUser(user: ApiUser): User {
 }
 
 export async function getMe(): Promise<User> {
-  const user = await apiClient<ApiUser>('users/me')
+  const { data: user } = await apiClient<ApiUser>('users/me')
   return fromApiUser(user)
 }
 

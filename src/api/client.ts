@@ -55,12 +55,12 @@ function isJsonBody(body: unknown): boolean {
   return true
 }
 
-export async function apiClient<T>(path: string, options: ApiRequestInit = {}): Promise<T> {
-  const { data } = await apiClientWithHeaders<T>(path, options)
-  return data
+export interface ApiResponse<T> {
+  data: T
+  headers: Headers
 }
 
-export async function apiClientWithHeaders<T>(path: string, options: ApiRequestInit = {}): Promise<{data: T, headers: Headers}> {
+export async function apiClient<T>(path: string, options: ApiRequestInit = {}): Promise<ApiResponse<T>> {
   const url = buildUrl(path)
   const { body, headers: originalHeaders, timeout = DEFAULT_TIMEOUT_MS, ...rest } = options
   const headers = new Headers(originalHeaders as HeadersInit | undefined)
@@ -126,6 +126,6 @@ export async function apiClientWithHeaders<T>(path: string, options: ApiRequestI
 }
 
 export async function apiList<T>(path: string, options?: ApiRequestInit): Promise<T[]> {
-  const data = await apiClient<T[] | null>(path, options)
+  const { data } = await apiClient<T[] | null>(path, options)
   return data ?? []
 }

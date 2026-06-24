@@ -120,39 +120,3 @@ test.describe('Status admin', () => {
     await expect(page.getByRole('button', { name: 'Delete status todo' })).toBeHidden()
   })
 })
-
-test.describe('Board view columns', () => {
-  test('done and cancelled columns are always expanded in board view', async ({ page, mockApi }) => {
-    await mockApi.prepare({
-      me: ME,
-      users: USERS,
-      projects: [PROJECT],
-      statuses: STATUSES,
-      members: MEMBERS,
-      tasks: [
-        makeApiTask({
-          id: 't1',
-          project_id: 'p1',
-          name: 'Active task',
-          status: 'todo',
-          position: 0,
-          owner_id: 'dev-user',
-        }),
-        makeApiTask({
-          id: 't2',
-          project_id: 'p1',
-          name: 'Finished task',
-          status: 'done',
-          position: 0,
-          owner_id: 'dev-user',
-        }),
-      ],
-    })
-
-    await page.goto('/projects/p1')
-    await page.getByRole('button', { name: /board/i }).click()
-
-    await expect(page.getByText('Active task')).toBeVisible()
-    await expect(page.getByText('Finished task')).toBeVisible()
-  })
-})

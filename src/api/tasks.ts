@@ -1,4 +1,4 @@
-import { apiClient, apiClientWithHeaders, apiList } from './client'
+import { apiClient, apiList } from './client'
 import type {
   ApiTask,
   ApiCreateTaskBody,
@@ -109,12 +109,12 @@ export async function listProjectTasks(
 }
 
 export async function getTask(taskID: string): Promise<Task> {
-  const task = await apiClient<ApiTask>(`tasks/${encodeURIComponent(taskID)}`)
+  const { data: task } = await apiClient<ApiTask>(`tasks/${encodeURIComponent(taskID)}`)
   return fromApiTask(task)
 }
 
 export async function createTask(projectID: string, input: CreateTaskInput): Promise<Task> {
-  const task = await apiClient<ApiTask>(`projects/${encodeURIComponent(projectID)}/tasks`, {
+  const { data: task } = await apiClient<ApiTask>(`projects/${encodeURIComponent(projectID)}/tasks`, {
     method: 'POST',
     body: toApiCreateBody(input),
   })
@@ -122,7 +122,7 @@ export async function createTask(projectID: string, input: CreateTaskInput): Pro
 }
 
 export async function updateTask(taskID: string, input: UpdateTaskInput): Promise<UpdateTaskResult> {
-  const { data, headers } = await apiClientWithHeaders<ApiTask>(`tasks/${encodeURIComponent(taskID)}`, {
+  const { data, headers } = await apiClient<ApiTask>(`tasks/${encodeURIComponent(taskID)}`, {
     method: 'PATCH',
     body: toApiUpdateBody(input),
   })
@@ -147,7 +147,7 @@ export async function createSubtask(
   input: CreateTaskInput,
 ): Promise<Task> {
   const body = toApiCreateBody(input) as ApiCreateSubtaskBody
-  const task = await apiClient<ApiTask>(`tasks/${encodeURIComponent(parentTaskID)}/tasks`, {
+  const { data: task } = await apiClient<ApiTask>(`tasks/${encodeURIComponent(parentTaskID)}/tasks`, {
     method: 'POST',
     body,
   })

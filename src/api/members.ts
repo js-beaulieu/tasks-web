@@ -39,7 +39,7 @@ export async function addProjectMember(
   input: AddMemberInput,
 ): Promise<ProjectMember> {
   const body: ApiAddMemberBody = { user_id: input.userId, role: input.role }
-  const member = await apiClient<ApiProjectMember>(
+  const { data: member } = await apiClient<ApiProjectMember>(
     `projects/${encodeURIComponent(projectID)}/members`,
     {
       method: 'POST',
@@ -55,7 +55,7 @@ export async function updateProjectMember(
   role: MemberRole,
 ): Promise<ProjectMember> {
   const body: ApiUpdateMemberBody = { role }
-  const member = await apiClient<ApiProjectMember>(
+  const { data: member } = await apiClient<ApiProjectMember>(
     `projects/${encodeURIComponent(projectID)}/members/${encodeURIComponent(userID)}`,
     {
       method: 'PATCH',
@@ -69,8 +69,9 @@ export async function removeProjectMember(
   projectID: string,
   userID: string,
 ): Promise<{ reassigned: number }> {
-  return apiClient<ApiRemoveMemberOutput>(
+  const { data } = await apiClient<ApiRemoveMemberOutput>(
     `projects/${encodeURIComponent(projectID)}/members/${encodeURIComponent(userID)}`,
     { method: 'DELETE' },
   )
+  return data
 }
