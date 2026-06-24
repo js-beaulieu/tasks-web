@@ -1,20 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
-import { mount } from '@vue/test-utils'
-import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
 import { getLastRequest, getRequestLog, seedMockData } from '@/test/mocks/state'
+import { mountWithQuery } from '@/test/mountWithQuery'
 import { useTaskTags } from './useTaskTags'
-
-function mountWithQuery(component: ReturnType<typeof defineComponent>) {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false, staleTime: 5 * 60 * 1000 } },
-  })
-  return mount(component, {
-    global: {
-      plugins: [[VueQueryPlugin, { queryClient }]],
-    },
-  })
-}
 
 describe('useTaskTags', () => {
   beforeEach(() => {

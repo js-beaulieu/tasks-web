@@ -7,7 +7,6 @@ import type { DateValue } from 'reka-ui'
 import { uniq } from 'es-toolkit'
 import { toast } from 'vue-sonner'
 import {
-  Loader2,
   RotateCw,
   Trash2,
   CalendarClock,
@@ -54,14 +53,15 @@ import TaskTagsSection from '@/components/tasks/TaskTagsSection.vue'
 import TaskSubtasksSection from '@/components/tasks/TaskSubtasksSection.vue'
 import RecurrencePicker from '@/components/tasks/RecurrencePicker.vue'
 import UserDisplay from '@/components/UserDisplay.vue'
-import { useProjects } from '@/composables/useProjects'
-import { useTask } from '@/composables/useTask'
-import { useProject } from '@/composables/useProject'
-import { useUpdateTask } from '@/composables/useUpdateTask'
-import { useStatuses } from '@/composables/useStatuses'
+import LoadingState from '@/components/shared/LoadingState.vue'
+import { useProjects } from '@/composables/projects/useProjects'
+import { useTask } from '@/composables/tasks/useTask'
+import { useProject } from '@/composables/projects/useProject'
+import { useUpdateTask } from '@/composables/tasks/useUpdateTask'
+import { useStatuses } from '@/composables/statuses/useStatuses'
 import { useMembers } from '@/composables/members/useMembers'
-import { useUsersByID } from '@/composables/useUsersByID'
-import { useProjectPermissions } from '@/composables/useProjectPermissions'
+import { useUsersByID } from '@/composables/users/useUsersByID'
+import { useProjectPermissions } from '@/composables/projects/useProjectPermissions'
 import { formatDate, formatRelativeDate, isOverdue } from '@/lib/date'
 import { friendlyStatusLabel, formatRecurrence } from '@/lib/tasks'
 import type { UpdateTaskInput } from '@/api/tasks'
@@ -325,9 +325,7 @@ const formattedEditDueDate = computed(() => {
         <SheetDescription v-if="isLoading">Loading task…</SheetDescription>
       </SheetHeader>
 
-      <div v-if="isLoading" class="flex items-center justify-center py-12">
-        <Loader2 class="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <LoadingState v-if="isLoading" />
 
       <div v-else-if="task" class="flex flex-col gap-4 px-4 pb-6">
         <!-- Read view -->

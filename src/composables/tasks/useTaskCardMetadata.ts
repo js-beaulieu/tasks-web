@@ -2,6 +2,7 @@ import { useQueries } from '@tanstack/vue-query'
 import { computed, toValue } from 'vue'
 import type { MaybeRef } from 'vue'
 import { listTaskTags, listSubtasks, type Task } from '@/api/tasks'
+import { qk } from '@/lib/queryKeys'
 
 export function useTaskCardMetadata(
   taskIDs: MaybeRef<string[]>,
@@ -11,7 +12,7 @@ export function useTaskCardMetadata(
   const tagQueries = useQueries({
     queries: computed(() =>
       ids.value.map((id) => ({
-        queryKey: ['tasks', id, 'tags'] as const,
+        queryKey: qk.taskTags(id),
         queryFn: () => listTaskTags(id),
         placeholderData: (prev: string[] | undefined) => prev ?? [],
       })),
@@ -21,7 +22,7 @@ export function useTaskCardMetadata(
   const subtaskQueries = useQueries({
     queries: computed(() =>
       ids.value.map((id) => ({
-        queryKey: ['tasks', id, 'subtasks'] as const,
+        queryKey: qk.taskSubtasks(id),
         queryFn: () => listSubtasks(id),
         placeholderData: (prev: Task[] | undefined) => prev ?? [],
       })),

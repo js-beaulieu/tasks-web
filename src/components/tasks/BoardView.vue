@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import BoardColumn from '@/components/tasks/BoardColumn.vue'
 import type { Task } from '@/api/tasks'
 import type { ProjectStatus } from '@/api/statuses'
-import type { UsersByIDMap } from '@/composables/useUsersByID'
+import type { UsersByIDMap } from '@/composables/users/useUsersByID'
 import { friendlyStatusLabel } from '@/lib/tasks'
 
 defineProps<{

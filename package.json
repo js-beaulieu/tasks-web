@@ -31,6 +31,7 @@
     "date-fns": "^4.4.0",
     "es-toolkit": "^1.47.1",
     "pinia": "^3.0.4",
+    "pinia-plugin-persistedstate": "^4.7.1",
     "reka-ui": "^2.9.10",
     "rrule": "^2.8.1",
     "tailwind-merge": "^3.6.0",

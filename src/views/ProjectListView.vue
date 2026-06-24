@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Loader2, Plus, FolderOpen, XCircle } from '@lucide/vue'
+import { Plus, FolderOpen } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -13,12 +13,15 @@ import {
 import ProjectCard from '@/components/projects/ProjectCard.vue'
 import ProjectFormDialog from '@/components/projects/ProjectFormDialog.vue'
 import ProjectDeleteDialog from '@/components/projects/ProjectDeleteDialog.vue'
-import { useProjects } from '@/composables/useProjects'
-import { useCreateProject } from '@/composables/useCreateProject'
-import { useUpdateProject } from '@/composables/useUpdateProject'
-import { useDeleteProject } from '@/composables/useDeleteProject'
-import { useUsersByID } from '@/composables/useUsersByID'
-import { ApiError } from '@/api/client'
+import { useProjects } from '@/composables/projects/useProjects'
+import { useCreateProject } from '@/composables/projects/useCreateProject'
+import { useUpdateProject } from '@/composables/projects/useUpdateProject'
+import { useDeleteProject } from '@/composables/projects/useDeleteProject'
+import { useUsersByID } from '@/composables/users/useUsersByID'
+import { canModifyRole, canAdminRole } from '@/composables/projects/useProjectPermissions'
+import { useAccessError } from '@/composables/useAccessError'
+import LoadingState from '@/components/shared/LoadingState.vue'
+import ErrorAlert from '@/components/shared/ErrorAlert.vue'
 import type { CreateProjectInput, Project } from '@/api/projects'
 import type { User } from '@/api/users'
 
@@ -52,14 +55,6 @@ const projectsWithOwners = computed(() => {
     owner: getOwner(project.ownerId),
   }))
 })
-
-function canModifyProject(role: string | undefined): boolean {
-  return role === 'modify' || role === 'admin'
-}
-
-function canAdminProject(role: string | undefined): boolean {
-  return role === 'admin'
-}
 
 const sortedProjects = computed(() => {
   const list = [...projectsWithOwners.value]
@@ -147,29 +142,7 @@ async function handleDeleteConfirm() {
   })
 }
 
-const accessError = computed(() => {
-  if (!isError.value || !error.value) return null
-  const status = error.value instanceof ApiError ? error.value.problem.status : undefined
-  if (status === 401) {
-    return {
-      title: 'Session expired',
-      message: 'Your session has expired. Sign in again to continue.',
-    }
-  }
-  if (status === 403) {
-    return {
-      title: 'Access denied',
-      message: 'You do not have permission to view projects.',
-    }
-  }
-  return {
-    title: 'Could not load projects',
-    message:
-      error.value instanceof Error
-        ? error.value.message
-        : 'Something went wrong while loading projects.',
-  }
-})
+const accessError = useAccessError(isError, error, 'projects')
 </script>
 
 <template>
@@ -194,28 +167,13 @@ const accessError = computed(() => {
       </div>
     </div>
 
-    <div
-      v-if="isLoading"
-      class="flex flex-col items-center gap-3 py-12"
-    >
-      <Loader2 class="h-8 w-8 animate-spin text-primary" />
-      <p class="text-sm text-muted-foreground">Loading projects…</p>
-    </div>
+    <LoadingState v-if="isLoading" message="Loading projects…" />
 
-    <div
+    <ErrorAlert
       v-else-if="accessError"
-      class="mx-auto max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-4"
-      role="alert"
-      aria-live="assertive"
-    >
-      <div class="flex items-start gap-3">
-        <XCircle class="mt-0.5 h-5 w-5 text-destructive" />
-        <div>
-          <h2 class="font-semibold text-destructive">{{ accessError.title }}</h2>
-          <p class="mt-1 text-sm text-destructive/90">{{ accessError.message }}</p>
-        </div>
-      </div>
-    </div>
+      :title="accessError.title"
+      :message="accessError.message"
+    />
 
     <div
       v-else-if="sortedProjects.length === 0"
@@ -241,8 +199,8 @@ const accessError = computed(() => {
         :key="item.project.id"
         :project="item.project"
         :owner="item.owner"
-        :can-modify="canModifyProject(item.project.effectiveRole)"
-        :can-admin="canAdminProject(item.project.effectiveRole)"
+        :can-modify="canModifyRole(item.project.effectiveRole)"
+        :can-admin="canAdminRole(item.project.effectiveRole)"
         @edit="openEdit"
         @delete="openDelete"
       />

@@ -6,7 +6,6 @@ export type ApiTask = components['schemas']['Task']
 export type ApiProjectMember = components['schemas']['ProjectMember']
 export type ApiProjectStatus = components['schemas']['ProjectStatus']
 export type ApiRemoveMemberOutput = components['schemas']['RemoveMemberOutputBody']
-export type ApiError = components['schemas']['ErrorModel']
 
 export type ApiCreateProjectBody = components['schemas']['CreateProjectBody']
 export type ApiUpdateProjectBody = components['schemas']['UpdateProjectBody']

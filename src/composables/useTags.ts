@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/vue-query'
 import { listTags } from '@/api/tags'
+import { qk } from '@/lib/queryKeys'
 
 export function useTags() {
   return useQuery({
-    queryKey: ['tags'],
+    queryKey: qk.tags(),
     queryFn: listTags,
   })
 }

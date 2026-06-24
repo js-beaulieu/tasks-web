@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import { computed } from 'vue'
-import { useMe } from '@/composables/useMe'
-import { ApiError } from '@/api/client'
-import { Loader2, AlertCircle, LogOut } from '@lucide/vue'
+import { useMe } from '@/composables/users/useMe'
+import { useAccessError } from '@/composables/useAccessError'
+import { LogOut } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
+import LoadingState from '@/components/shared/LoadingState.vue'
+import ErrorAlert from '@/components/shared/ErrorAlert.vue'
 import ThemeToggle from './ThemeToggle.vue'
 
 const { isLoading, isError, error, data: me, refetch } = useMe()
@@ -14,29 +16,7 @@ const publicOrigin =
 
 const signOutHref = computed(() => `/oauth2/sign_out?rd=${encodeURIComponent(publicOrigin)}`)
 
-const accessError = computed(() => {
-  if (!isError.value || !error.value) return null
-  const status = error.value instanceof ApiError ? error.value.problem.status : undefined
-  if (status === 401) {
-    return {
-      title: 'Session expired',
-      message: 'Your session has expired. Sign in again to continue.',
-    }
-  }
-  if (status === 403) {
-    return {
-      title: 'Access denied',
-      message: 'You do not have permission to access this app.',
-    }
-  }
-  return {
-    title: 'Could not load session',
-    message:
-      error.value instanceof Error
-        ? error.value.message
-        : 'Something went wrong while loading your account.',
-  }
-})
+const accessError = useAccessError(isError, error, 'account')
 </script>
 
 <template>
@@ -75,35 +55,22 @@ const accessError = computed(() => {
     </header>
 
     <main class="flex-1 p-4">
-      <div v-if="isLoading" class="flex flex-col items-center gap-3 py-12">
-        <Loader2 class="h-8 w-8 animate-spin text-primary" />
-        <p class="text-sm text-muted-foreground">Loading your account…</p>
-      </div>
+      <LoadingState v-if="isLoading" message="Loading your account…" />
 
-      <div
+      <ErrorAlert
         v-else-if="accessError"
-        class="mx-auto max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-4"
-        role="alert"
-        aria-live="assertive"
+        :title="accessError.title"
+        :message="accessError.message"
       >
-        <div class="flex items-start gap-3">
-          <AlertCircle class="mt-0.5 h-5 w-5 text-destructive" />
-          <div class="flex-1">
-            <h2 class="font-semibold text-destructive">
-              {{ accessError.title }}
-            </h2>
-            <p class="mt-1 text-sm text-destructive/90">
-              {{ accessError.message }}
-            </p>
-            <div class="mt-4 flex gap-2">
-              <Button type="button" @click="refetch()"> Retry </Button>
-              <Button variant="outline" as-child>
-                <a :href="signOutHref"> Sign in again </a>
-              </Button>
-            </div>
+        <template #actions>
+          <div class="mt-4 flex gap-2">
+            <Button type="button" @click="refetch()"> Retry </Button>
+            <Button variant="outline" as-child>
+              <a :href="signOutHref"> Sign in again </a>
+            </Button>
           </div>
-        </div>
-      </div>
+        </template>
+      </ErrorAlert>
 
       <RouterView v-else-if="me" />
     </main>

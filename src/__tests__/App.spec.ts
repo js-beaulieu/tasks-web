@@ -53,7 +53,7 @@ describe('App', () => {
     )
 
     const wrapper = wrapperWithQuery()
-    await vi.waitFor(() => expect(wrapper.text()).toContain('Could not load session'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Could not load account'))
 
     expect(wrapper.text()).toContain('HTTP 500: Internal Server Error')
   })

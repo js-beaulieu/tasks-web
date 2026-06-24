@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { toast } from 'vue-sonner'
 import { updateTask, type UpdateTaskInput, type UpdateTaskResult } from '@/api/tasks'
 import { showErrorToast } from '@/lib/error'
+import { qk } from '@/lib/queryKeys'
 
 export function useUpdateTask() {
   const queryClient = useQueryClient()
@@ -12,23 +13,23 @@ export function useUpdateTask() {
       const updated = data.task
       const sourceProjectID = variables.sourceProjectID
 
-      queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId, 'tasks'] })
-      queryClient.invalidateQueries({ queryKey: ['tasks', variables.taskID] })
-      queryClient.invalidateQueries({ queryKey: ['tasks', variables.taskID, 'subtasks'] })
+      queryClient.invalidateQueries({ queryKey: qk.projectTasks(updated.projectId) })
+      queryClient.invalidateQueries({ queryKey: qk.task(variables.taskID) })
+      queryClient.invalidateQueries({ queryKey: qk.taskSubtasks(variables.taskID) })
 
       if (sourceProjectID) {
-        queryClient.invalidateQueries({ queryKey: ['projects', sourceProjectID] })
-        queryClient.invalidateQueries({ queryKey: ['projects', sourceProjectID, 'members'] })
-        queryClient.invalidateQueries({ queryKey: ['projects', sourceProjectID, 'statuses'] })
+        queryClient.invalidateQueries({ queryKey: qk.project(sourceProjectID) })
+        queryClient.invalidateQueries({ queryKey: qk.projectMembers(sourceProjectID) })
+        queryClient.invalidateQueries({ queryKey: qk.projectStatuses(sourceProjectID) })
       }
 
       if (sourceProjectID && sourceProjectID !== updated.projectId) {
-        queryClient.invalidateQueries({ queryKey: ['projects', sourceProjectID, 'tasks'] })
+        queryClient.invalidateQueries({ queryKey: qk.projectTasks(sourceProjectID) })
       }
 
-      queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId] })
-      queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId, 'members'] })
-      queryClient.invalidateQueries({ queryKey: ['projects', updated.projectId, 'statuses'] })
+      queryClient.invalidateQueries({ queryKey: qk.project(updated.projectId) })
+      queryClient.invalidateQueries({ queryKey: qk.projectMembers(updated.projectId) })
+      queryClient.invalidateQueries({ queryKey: qk.projectStatuses(updated.projectId) })
 
       if (data.nextOccurrenceId) {
         toast.success('Task completed', {
