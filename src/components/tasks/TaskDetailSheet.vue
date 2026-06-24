@@ -1,15 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { format } from 'date-fns'
-import { CalendarDate } from '@internationalized/date'
-import type { DateValue } from 'reka-ui'
 import { uniq } from 'es-toolkit'
 import { toast } from 'vue-sonner'
 import {
   RotateCw,
   Trash2,
-  CalendarClock,
   Pencil,
   X,
 } from '@lucide/vue'
@@ -38,20 +34,14 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { CalendarClock } from '@lucide/vue'
+import { format } from 'date-fns'
+import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
 import TaskDeleteDialog from '@/components/tasks/TaskDeleteDialog.vue'
 import TaskTagsSection from '@/components/tasks/TaskTagsSection.vue'
 import TaskSubtasksSection from '@/components/tasks/TaskSubtasksSection.vue'
 import RecurrencePicker from '@/components/tasks/RecurrencePicker.vue'
+import StatusSelect from '@/components/tasks/StatusSelect.vue'
 import UserDisplay from '@/components/UserDisplay.vue'
 import LoadingState from '@/components/shared/LoadingState.vue'
 import { useProjects } from '@/composables/projects/useProjects'
@@ -62,7 +52,8 @@ import { useStatuses } from '@/composables/statuses/useStatuses'
 import { useMembers } from '@/composables/members/useMembers'
 import { useUsersByID } from '@/composables/users/useUsersByID'
 import { useProjectPermissions } from '@/composables/projects/useProjectPermissions'
-import { formatDate, formatRelativeDate, isOverdue } from '@/lib/date'
+import { useTaskEditState } from '@/composables/tasks/useTaskEditState'
+import { formatDate, formatRelativeDate, isOverdue, dateValueToISO } from '@/lib/date'
 import { friendlyStatusLabel, formatRecurrence } from '@/lib/tasks'
 import type { UpdateTaskInput } from '@/api/tasks'
 
@@ -71,7 +62,6 @@ const router = useRouter()
 
 const projectID = computed(() => route.params.projectID as string)
 const taskID = computed(() => route.params.taskID as string | undefined)
-
 const open = computed(() => !!taskID.value)
 
 const { data: task, isLoading } = useTask(taskID)
@@ -90,91 +80,48 @@ const userIDs = computed(() => {
   return uniq(ids)
 })
 const { data: usersByID } = useUsersByID(userIDs)
-
 const { canModify } = useProjectPermissions(project)
 
 const editing = ref(false)
-
-const editName = ref('')
-const editDescription = ref('')
-const editProjectId = ref('')
-const editStatus = ref('')
-const editAssigneeId = ref<string>('__none__')
-const editDueDate = ref<DateValue | undefined>()
-const editRecurrence = ref<string | null>(null)
-const dirty = ref(false)
+const deleteDialogOpen = ref(false)
 const moveConfirmationOpen = ref(false)
 const pendingMoveConfirmation = ref<UpdateTaskInput | null>(null)
 
-function parseISOToDateValue(iso: string | null): DateValue | undefined {
-  if (!iso) return undefined
-  const d = new Date(iso)
-  return new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate())
-}
-
-function dateValueToISO(dv: DateValue | undefined): string | undefined {
-  if (!dv) return undefined
-  return new Date(dv.year, dv.month - 1, dv.day).toISOString()
-}
-
-function resetEditFields(t: { projectId: string; name: string; description: string | null; status: string; assigneeId: string | null; dueDate: string | null; recurrence: string | null }) {
-	editProjectId.value = t.projectId
-  editName.value = t.name
-  editDescription.value = t.description ?? ''
-  editStatus.value = t.status
-  editAssigneeId.value = t.assigneeId ?? '__none__'
-  editDueDate.value = parseISOToDateValue(t.dueDate)
-  editRecurrence.value = t.recurrence
-  dirty.value = false
-}
-
-watch(task, (t) => {
-  if (!t) return
-  resetEditFields(t)
-}, { immediate: true })
-
-watch([editName, editDescription, editProjectId, editStatus, editAssigneeId, editDueDate, editRecurrence], () => {
-  if (!task.value) return
-  const projectChanged = editProjectId.value !== task.value.projectId
-  const nameChanged = editName.value !== task.value.name
-  const descChanged = editDescription.value !== (task.value.description ?? '')
-  const statusChanged = editStatus.value !== task.value.status
-  const assigneeChanged = editAssigneeId.value !== (task.value.assigneeId ?? '__none__')
-  const dueDateChanged = dateValueToISO(editDueDate.value) !== (task.value.dueDate ?? undefined)
-  const recurrenceChanged = editRecurrence.value !== (task.value.recurrence ?? null)
-  dirty.value = projectChanged || nameChanged || descChanged || statusChanged || assigneeChanged || dueDateChanged || recurrenceChanged
-})
+const {
+  editName, editDescription, editProjectId, editStatus,
+  editAssigneeId, editDueDate, editRecurrence, dirty,
+  resetEditFields, buildUpdateInput,
+} = useTaskEditState(task)
 
 const updateMutation = useUpdateTask()
 
-function buildUpdateInput(): UpdateTaskInput {
-  const input: UpdateTaskInput = {}
-  if (!task.value) return input
+const projectOptions = computed(() =>
+  (projects.value ?? [])
+    .filter((entry) => entry.id === projectID.value || entry.effectiveRole === 'modify' || entry.effectiveRole === 'admin')
+    .map((entry) => ({ value: entry.id, label: entry.name })),
+)
 
-  if (editProjectId.value !== task.value.projectId) input.projectId = editProjectId.value
-  if (editName.value !== task.value.name) input.name = editName.value
-  if (editDescription.value !== (task.value.description ?? '')) {
-    input.description = editDescription.value || undefined
+const memberOptions = computed(() => {
+  const opts = [{ value: '__none__', label: 'Unassigned' }]
+  for (const m of members.value ?? []) {
+    const user = usersByID.value?.[m.userId]
+    opts.push({ value: m.userId, label: user?.name ?? m.userId })
   }
-  if (editStatus.value !== task.value.status) input.status = editStatus.value
-  if (editAssigneeId.value !== (task.value.assigneeId ?? '__none__')) {
-    input.assigneeId = editAssigneeId.value === '__none__' ? null : editAssigneeId.value
-  }
-  const newDueDate = dateValueToISO(editDueDate.value)
-  if (newDueDate !== (task.value.dueDate ?? undefined)) {
-    input.dueDate = newDueDate
-  }
+  return opts
+})
 
-  if (editRecurrence.value !== (task.value.recurrence ?? null)) {
-    input.recurrence = editRecurrence.value
-  }
-
-  return input
-}
+const owner = computed(() => task.value ? usersByID.value?.[task.value.ownerId] : undefined)
+const assignee = computed(() => task.value?.assigneeId ? usersByID.value?.[task.value.assigneeId] : undefined)
+const currentStatusLabel = computed(() => task.value ? friendlyStatusLabel(task.value.status) : '')
+const dueDateLabel = computed(() => task.value?.dueDate ? formatDate(task.value.dueDate) : 'None')
+const dueDateOverdue = computed(() => task.value?.dueDate ? isOverdue(task.value.dueDate) : false)
+const formattedEditDueDate = computed(() => {
+  if (!editDueDate.value) return ''
+  return format(new Date(editDueDate.value.year, editDueDate.value.month - 1, editDueDate.value.day), 'MMM d, yyyy')
+})
 
 function handleMoveSuccess(updatedProjectID: string, updatedTaskID: string) {
   const targetProjectName = projectOptions.value.find((option) => option.value === updatedProjectID)?.label ?? 'target project'
-
   dirty.value = false
   editing.value = false
   close()
@@ -191,7 +138,6 @@ function handleMoveSuccess(updatedProjectID: string, updatedTaskID: string) {
 
 function commitSave(input: UpdateTaskInput) {
   if (!task.value) return
-
   updateMutation.mutate(
     { taskID: task.value.id, input, sourceProjectID: projectID.value },
     {
@@ -216,20 +162,16 @@ function commitSave(input: UpdateTaskInput) {
 
 function save() {
   if (!task.value || !dirty.value) return
-
   const input = buildUpdateInput()
-
   if (input.recurrence && !input.dueDate && !task.value.dueDate) {
     toast.error('Recurring tasks require a due date')
     return
   }
-
   if (input.projectId && input.projectId !== task.value.projectId) {
     pendingMoveConfirmation.value = input
     moveConfirmationOpen.value = true
     return
   }
-
   commitSave(input)
 }
 
@@ -253,65 +195,9 @@ function confirmMove() {
   commitSave(input)
 }
 
-function cancelMoveConfirmation() {
-  moveConfirmationOpen.value = false
-  pendingMoveConfirmation.value = null
-}
-
 function close() {
   router.push({ name: 'project-detail', params: { projectID: projectID.value } })
 }
-
-const deleteDialogOpen = ref(false)
-
-const statusOptions = computed(() =>
-  (statuses.value ?? []).map((s) => ({ value: s.status, label: friendlyStatusLabel(s.status) })),
-)
-
-const projectOptions = computed(() =>
-  (projects.value ?? [])
-    .filter((entry) => entry.id === projectID.value || entry.effectiveRole === 'modify' || entry.effectiveRole === 'admin')
-    .map((entry) => ({ value: entry.id, label: entry.name })),
-)
-
-const memberOptions = computed(() => {
-  const opts = [{ value: '__none__', label: 'Unassigned' }]
-  for (const m of members.value ?? []) {
-    const user = usersByID.value?.[m.userId]
-    opts.push({ value: m.userId, label: user?.name ?? m.userId })
-  }
-  return opts
-})
-
-const owner = computed(() => {
-  if (!task.value) return undefined
-  return usersByID.value?.[task.value.ownerId]
-})
-
-const assignee = computed(() => {
-  if (!task.value) return undefined
-  return task.value.assigneeId ? usersByID.value?.[task.value.assigneeId] : undefined
-})
-
-const currentStatusLabel = computed(() => {
-  if (!task.value) return ''
-  return friendlyStatusLabel(task.value.status)
-})
-
-const dueDateLabel = computed(() => {
-  if (!task.value?.dueDate) return 'None'
-  return formatDate(task.value.dueDate!)
-})
-
-const dueDateOverdue = computed(() => {
-  if (!task.value?.dueDate) return false
-  return isOverdue(task.value.dueDate)
-})
-
-const formattedEditDueDate = computed(() => {
-  if (!editDueDate.value) return ''
-  return format(new Date(editDueDate.value.year, editDueDate.value.month - 1, editDueDate.value.day), 'MMM d, yyyy')
-})
 </script>
 
 <template>
@@ -407,71 +293,35 @@ const formattedEditDueDate = computed(() => {
         <template v-else>
           <div class="flex flex-col gap-2">
             <Label for="task-name">Name</Label>
-            <Input
-              id="task-name"
-              v-model="editName"
-            />
+            <Input id="task-name" v-model="editName" />
           </div>
 
           <div class="flex flex-col gap-2">
             <Label for="task-desc">Description</Label>
-            <Textarea
-              id="task-desc"
-              v-model="editDescription"
-              rows="4"
-            />
+            <Textarea id="task-desc" v-model="editDescription" rows="4" />
           </div>
 
           <div class="flex flex-col gap-2">
             <Label>Project</Label>
             <Select v-model="editProjectId">
-              <SelectTrigger class="w-full">
-                <SelectValue placeholder="Select project" />
-              </SelectTrigger>
+              <SelectTrigger class="w-full"><SelectValue placeholder="Select project" /></SelectTrigger>
               <SelectContent>
-                <SelectItem
-                  v-for="opt in projectOptions"
-                  :key="opt.value"
-                  :value="opt.value"
-                >
-                  {{ opt.label }}
-                </SelectItem>
+                <SelectItem v-for="opt in projectOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div class="flex flex-col gap-2">
             <Label>Status</Label>
-            <Select v-model="editStatus">
-              <SelectTrigger class="w-full">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  v-for="opt in statusOptions"
-                  :key="opt.value"
-                  :value="opt.value"
-                >
-                  {{ opt.label }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <StatusSelect v-model="editStatus" :statuses="statuses ?? []" />
           </div>
 
           <div class="flex flex-col gap-2">
             <Label>Assignee</Label>
             <Select v-model="editAssigneeId">
-              <SelectTrigger class="w-full">
-                <SelectValue placeholder="Select assignee" />
-              </SelectTrigger>
+              <SelectTrigger class="w-full"><SelectValue placeholder="Select assignee" /></SelectTrigger>
               <SelectContent>
-                <SelectItem
-                  v-for="opt in memberOptions"
-                  :key="opt.value"
-                  :value="opt.value"
-                >
-                  {{ opt.label }}
-                </SelectItem>
+                <SelectItem v-for="opt in memberOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -480,31 +330,16 @@ const formattedEditDueDate = computed(() => {
             <Label>Due Date</Label>
             <Popover>
               <PopoverTrigger as-child>
-                <Button
-                  variant="outline"
-                  class="w-full justify-start text-left font-normal"
-                >
+                <Button variant="outline" class="w-full justify-start text-left font-normal">
                   <CalendarClock class="mr-2 h-4 w-4" />
-                  <span v-if="editDueDate">
-                    {{ formattedEditDueDate }}
-                  </span>
+                  <span v-if="editDueDate">{{ formattedEditDueDate }}</span>
                   <span v-else class="text-muted-foreground">Pick a date</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent class="w-auto p-0" align="start">
-                <Calendar
-                  v-model="editDueDate"
-                  :week-starts-on="1"
-                />
+                <Calendar v-model="editDueDate" :week-starts-on="1" />
                 <div class="border-t p-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="w-full"
-                    @click="editDueDate = undefined"
-                  >
-                    Clear date
-                  </Button>
+                  <Button variant="ghost" size="sm" class="w-full" @click="editDueDate = undefined">Clear date</Button>
                 </div>
               </PopoverContent>
             </Popover>
@@ -520,44 +355,24 @@ const formattedEditDueDate = computed(() => {
           <Separator />
 
           <div class="flex items-center justify-between gap-2">
-            <Button
-              variant="destructive"
-              size="sm"
-              @click="deleteDialogOpen = true"
-            >
+            <Button variant="destructive" size="sm" @click="deleteDialogOpen = true">
               <Trash2 class="mr-1 h-4 w-4" />
               Delete
             </Button>
             <div class="flex items-center gap-2">
-              <Button variant="outline" size="sm" @click="cancelEditing">
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                :disabled="!dirty"
-                @click="save"
-              >
-                Save
-              </Button>
+              <Button variant="outline" size="sm" @click="cancelEditing">Cancel</Button>
+              <Button size="sm" :disabled="!dirty" @click="save">Save</Button>
             </div>
           </div>
         </template>
 
         <Separator />
 
-        <TaskTagsSection
-          :task-i-d="task.id"
-          :can-modify="canModify"
-        />
+        <TaskTagsSection :task-i-d="task.id" :can-modify="canModify" />
 
         <Separator />
 
-        <TaskSubtasksSection
-          :task="task"
-          :project-i-d="projectID"
-          :statuses="statuses ?? []"
-          :can-modify="canModify"
-        />
+        <TaskSubtasksSection :task="task" :project-i-d="projectID" :statuses="statuses ?? []" :can-modify="canModify" />
 
         <TaskDeleteDialog
           :open="deleteDialogOpen"
@@ -567,22 +382,17 @@ const formattedEditDueDate = computed(() => {
           @deleted="close"
         />
 
-        <AlertDialog :open="moveConfirmationOpen" @update:open="(value) => { moveConfirmationOpen = value }">
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Move task to another project?</AlertDialogTitle>
-              <AlertDialogDescription>
-                The task will stay closed on this project page after the move. If the target project does not support the current status, it will fall back to that project's first status. If the current assignee is not a member of the target project, the task will be reassigned to the target project's owner.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel @click="cancelMoveConfirmation">Cancel</AlertDialogCancel>
-              <AlertDialogAction @click="confirmMove">
-                Move task
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <ConfirmDialog
+          :open="moveConfirmationOpen"
+          title="Move task to another project?"
+          confirm-label="Move task"
+          @update:open="moveConfirmationOpen = $event"
+          @confirm="confirmMove"
+        >
+          <template #description>
+            The task will stay closed on this project page after the move. If the target project does not support the current status, it will fall back to that project's first status. If the current assignee is not a member of the target project, the task will be reassigned to the target project's owner.
+          </template>
+        </ConfirmDialog>
       </div>
     </SheetContent>
   </Sheet>
