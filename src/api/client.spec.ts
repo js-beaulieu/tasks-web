@@ -133,7 +133,7 @@ describe('apiClient', () => {
     expect((init.headers as Headers).has('Authorization')).toBe(false)
   })
 
-  it('returns undefined for 204 No Content', async () => {
+  it('returns undefined data for 204 No Content', async () => {
     const fetchMock = mockFetch({
       ok: true,
       status: 204,
@@ -143,9 +143,9 @@ describe('apiClient', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const result = await apiClient('tasks/1/complete', { method: 'POST' })
+    const { data } = await apiClient('tasks/1/complete', { method: 'POST' })
 
-    expect(result).toBeUndefined()
+    expect(data).toBeUndefined()
   })
 
   it('parses problem+json into ApiError', async () => {

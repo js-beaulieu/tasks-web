@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { updateTask, type Task } from '@/api/tasks'
+import { updateTask, type UpdateTaskResult } from '@/api/tasks'
 import { showErrorToast } from '@/lib/error'
 
 export function useDetachSubtask() {
   const queryClient = useQueryClient()
 
-  return useMutation<Task, Error, { taskID: string; projectID: string; parentTaskID: string }>({
+  return useMutation<UpdateTaskResult, Error, { taskID: string; projectID: string; parentTaskID: string }>({
     mutationFn: ({ taskID }) => updateTask(taskID, { parentId: null }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks', variables.taskID] })

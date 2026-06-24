@@ -30,19 +30,6 @@ const emit = defineEmits<{
 
 const scrollContainer = ref<HTMLElement | null>(null)
 
-const defaultCollapsedStatuses = new Set<string>(['done', 'cancelled'])
-const collapsedColumns = ref<Set<string>>(new Set(defaultCollapsedStatuses))
-
-function toggleColumn(status: string) {
-  const next = new Set(collapsedColumns.value)
-  if (next.has(status)) {
-    next.delete(status)
-  } else {
-    next.add(status)
-  }
-  collapsedColumns.value = next
-}
-
 function friendlyLabel(status: string): string {
   return friendlyStatusLabel(status)
 }
@@ -57,46 +44,33 @@ function friendlyLabel(status: string): string {
         class="flex w-72 shrink-0 flex-col gap-2 rounded-lg border bg-muted/30 p-3"
       >
         <div class="flex items-center justify-between">
-          <button
-            class="flex items-center gap-1.5 text-sm font-semibold"
-            @click="toggleColumn(group.status)"
-          >
+          <span class="flex items-center gap-1.5 text-sm font-semibold">
             {{ friendlyLabel(group.status) }}
             <Badge variant="secondary" class="ml-1 text-xs">
               {{ group.tasks.length }}
             </Badge>
-          </button>
+          </span>
         </div>
 
-        <div v-if="!collapsedColumns.has(group.status)">
-          <BoardColumn
-            :status="group.status"
-            :tasks="group.tasks"
-            :project-i-d="projectID"
-            :statuses="statuses"
-            :users-by-i-d="usersByID"
-            :can-modify="canModify"
-            :drag-enabled="dragEnabled"
-            :drag-reset-key="dragResetKey"
-            :is-adding="isAdding"
-            :scroll-container="scrollContainer"
-            :tags-by-task="tagsByTask"
-            :subtask-counts="subtaskCounts"
-            @open-task="emit('openTask', $event)"
-            @delete="emit('delete', $event)"
-            @move-status="(id, s) => emit('moveStatus', id, s)"
-            @reorder="(taskID, position, newStatus) => emit('reorder', taskID, position, newStatus)"
-            @quick-add="(status, name) => emit('quickAdd', status, name)"
-          />
-        </div>
-
-        <button
-          v-else
-          class="rounded-lg border-2 border-dashed py-4 text-center text-xs text-muted-foreground hover:bg-accent/30"
-          @click="toggleColumn(group.status)"
-        >
-          Expand ({{ group.tasks.length }})
-        </button>
+        <BoardColumn
+          :status="group.status"
+          :tasks="group.tasks"
+          :project-i-d="projectID"
+          :statuses="statuses"
+          :users-by-i-d="usersByID"
+          :can-modify="canModify"
+          :drag-enabled="dragEnabled"
+          :drag-reset-key="dragResetKey"
+          :is-adding="isAdding"
+          :scroll-container="scrollContainer"
+          :tags-by-task="tagsByTask"
+          :subtask-counts="subtaskCounts"
+          @open-task="emit('openTask', $event)"
+          @delete="emit('delete', $event)"
+          @move-status="(id, s) => emit('moveStatus', id, s)"
+          @reorder="(taskID, position, newStatus) => emit('reorder', taskID, position, newStatus)"
+          @quick-add="(status, name) => emit('quickAdd', status, name)"
+        />
       </div>
     </div>
   </div>

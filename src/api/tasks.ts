@@ -4,8 +4,6 @@ import type {
   ApiCreateTaskBody,
   ApiCreateSubtaskBody,
   ApiUpdateTaskBody,
-  ApiCompleteTaskBody,
-  ApiCompleteTaskResp,
   ApiAddTagBody,
 } from './types'
 
@@ -46,9 +44,9 @@ export interface UpdateTaskInput {
   recurrence?: string | null
 }
 
-export interface CompleteTaskResponse {
-  completed: Task
-  next: Task | null
+export interface UpdateTaskResult {
+  task: Task
+  nextOccurrenceId: string | null
 }
 
 function fromApiTask(t: ApiTask): Task {
@@ -111,42 +109,32 @@ export async function listProjectTasks(
 }
 
 export async function getTask(taskID: string): Promise<Task> {
-  const task = await apiClient<ApiTask>(`tasks/${encodeURIComponent(taskID)}`)
+  const { data: task } = await apiClient<ApiTask>(`tasks/${encodeURIComponent(taskID)}`)
   return fromApiTask(task)
 }
 
 export async function createTask(projectID: string, input: CreateTaskInput): Promise<Task> {
-  const task = await apiClient<ApiTask>(`projects/${encodeURIComponent(projectID)}/tasks`, {
+  const { data: task } = await apiClient<ApiTask>(`projects/${encodeURIComponent(projectID)}/tasks`, {
     method: 'POST',
     body: toApiCreateBody(input),
   })
   return fromApiTask(task)
 }
 
-export async function updateTask(taskID: string, input: UpdateTaskInput): Promise<Task> {
-  const task = await apiClient<ApiTask>(`tasks/${encodeURIComponent(taskID)}`, {
+export async function updateTask(taskID: string, input: UpdateTaskInput): Promise<UpdateTaskResult> {
+  const { data, headers } = await apiClient<ApiTask>(`tasks/${encodeURIComponent(taskID)}`, {
     method: 'PATCH',
     body: toApiUpdateBody(input),
   })
-  return fromApiTask(task)
+  const nextId = headers.get('X-Next-Occurrence-Id') || null
+  return {
+    task: fromApiTask(data),
+    nextOccurrenceId: nextId,
+  }
 }
 
 export async function deleteTask(taskID: string): Promise<void> {
   await apiClient<void>(`tasks/${encodeURIComponent(taskID)}`, { method: 'DELETE' })
-}
-
-export async function completeTask(taskID: string, doneStatus: string): Promise<CompleteTaskResponse> {
-  const resp = await apiClient<ApiCompleteTaskResp>(
-    `tasks/${encodeURIComponent(taskID)}/complete`,
-    {
-      method: 'POST',
-      body: { done_status: doneStatus } as ApiCompleteTaskBody,
-    },
-  )
-  return {
-    completed: fromApiTask(resp.completed),
-    next: resp.next ? fromApiTask(resp.next) : null,
-  }
 }
 
 export async function listSubtasks(taskID: string): Promise<Task[]> {
@@ -159,7 +147,7 @@ export async function createSubtask(
   input: CreateTaskInput,
 ): Promise<Task> {
   const body = toApiCreateBody(input) as ApiCreateSubtaskBody
-  const task = await apiClient<ApiTask>(`tasks/${encodeURIComponent(parentTaskID)}/tasks`, {
+  const { data: task } = await apiClient<ApiTask>(`tasks/${encodeURIComponent(parentTaskID)}/tasks`, {
     method: 'POST',
     body,
   })

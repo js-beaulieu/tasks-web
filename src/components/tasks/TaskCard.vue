@@ -14,7 +14,7 @@ import type { Task } from '@/api/tasks'
 import type { ProjectStatus } from '@/api/statuses'
 import type { UsersByIDMap } from '@/composables/useUsersByID'
 import { formatDate, isOverdue } from '@/lib/date'
-import { friendlyStatusLabel } from '@/lib/tasks'
+import { friendlyStatusLabel, formatRecurrence } from '@/lib/tasks'
 
 const props = defineProps<{
   task: Task
@@ -95,6 +95,7 @@ const statusOptions = computed(() =>
           </span>
           <span v-if="task.recurrence" class="inline-flex items-center gap-0.5">
             <RotateCw class="size-3" />
+            {{ formatRecurrence(task.recurrence) }}
           </span>
           <Badge
             v-for="tag in tags?.slice(0, 3)"

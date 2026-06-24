@@ -166,23 +166,6 @@ export interface paths {
         patch: operations["patch-tasks-by-task-id"];
         trace?: never;
     };
-    "/tasks/{taskID}/complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Post tasks by task ID complete */
-        post: operations["post-tasks-by-task-id-complete"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/tasks/{taskID}/tags": {
         parameters: {
             query?: never;
@@ -319,25 +302,6 @@ export interface components {
              */
             readonly $schema?: string;
             tag: string;
-        };
-        CompleteTaskBody: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/CompleteTaskBody.json
-             */
-            readonly $schema?: string;
-            done_status: string;
-        };
-        CompleteTaskResp: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/CompleteTaskResp.json
-             */
-            readonly $schema?: string;
-            completed: components["schemas"]["Task"];
-            next?: components["schemas"]["Task"] | null;
         };
         CreateProjectBody: {
             /**
@@ -546,6 +510,16 @@ export interface components {
             project_id?: string;
             recurrence?: components["schemas"]["NullableString"];
             status?: string;
+        };
+        UpdateTaskResp: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/UpdateTaskResp.json
+             */
+            readonly $schema?: string;
+            next: components["schemas"]["Task"];
+            task: components["schemas"]["Task"];
         };
         User: {
             /**
@@ -1140,42 +1114,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Task"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "post-tasks-by-task-id-complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                taskID: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CompleteTaskBody"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CompleteTaskResp"];
+                    "application/json": components["schemas"]["UpdateTaskResp"];
                 };
             };
             /** @description Error */

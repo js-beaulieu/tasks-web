@@ -3,7 +3,7 @@ import { makeApiTask } from '@/test/mocks/fixtures'
 import {
   getLastRequest,
   seedMockData,
-  setCompletionNextTask,
+  setUpdateNextOccurrenceId,
 } from '@/test/mocks/state'
 import {
   listProjectTasks,
@@ -11,7 +11,6 @@ import {
   createTask,
   updateTask,
   deleteTask,
-  completeTask,
   listSubtasks,
   createSubtask,
   listTaskTags,
@@ -115,8 +114,9 @@ describe('updateTask', () => {
     expect(getLastRequest()?.pathname).toBe('/tasks/tasks/t1')
     expect(getLastRequest()?.method).toBe('PATCH')
     expect(getLastRequest()?.body).toEqual({ status: 'in_progress', position: 5 })
-    expect(result.status).toBe('in_progress')
-    expect(result.position).toBe(5)
+    expect(result.task.status).toBe('in_progress')
+    expect(result.task.position).toBe(5)
+    expect(result.nextOccurrenceId).toBeNull()
   })
 
   it('sends null parentId to detach subtask', async () => {
@@ -127,7 +127,7 @@ describe('updateTask', () => {
     const result = await updateTask('t1', { parentId: null })
 
     expect(getLastRequest()?.body).toEqual({ parent_id: null })
-    expect(result.parentId).toBeNull()
+    expect(result.task.parentId).toBeNull()
   })
 
   it('sends project_id for cross-project move', async () => {
@@ -138,7 +138,25 @@ describe('updateTask', () => {
     const result = await updateTask('t1', { projectId: 'p2' })
 
     expect(getLastRequest()?.body).toEqual({ project_id: 'p2' })
-    expect(result.projectId).toBe('p2')
+    expect(result.task.projectId).toBe('p2')
+  })
+
+  it('maps next occurrence ID for recurring completion', async () => {
+    seedMockData({
+      tasks: [
+        {
+          ...makeApiTask({ id: 't1', project_id: 'p1', owner_id: 'u1', status: 'todo' }),
+          due_date: '2026-07-01T00:00:00Z',
+          recurrence: 'FREQ=DAILY',
+        },
+      ],
+    })
+    const nextTask = makeApiTask({ id: 't2', project_id: 'p1', status: 'todo', owner_id: 'u1' })
+    setUpdateNextOccurrenceId('t1', nextTask)
+
+    const result = await updateTask('t1', { status: 'done' })
+
+    expect(result.nextOccurrenceId).toBe('t2')
   })
 })
 
@@ -148,28 +166,6 @@ describe('deleteTask', () => {
 
     expect(getLastRequest()?.pathname).toBe('/tasks/tasks/t1')
     expect(getLastRequest()?.method).toBe('DELETE')
-  })
-})
-
-describe('completeTask', () => {
-  it('sends done_status and maps response', async () => {
-    const result = await completeTask('t1', 'done')
-
-    expect(getLastRequest()?.pathname).toBe('/tasks/tasks/t1/complete')
-    expect(getLastRequest()?.method).toBe('POST')
-    expect(getLastRequest()?.body).toEqual({ done_status: 'done' })
-    expect(result.completed.status).toBe('done')
-    expect(result.next).toBeNull()
-  })
-
-  it('maps next task for recurring completion', async () => {
-    const nextTask = makeApiTask({ id: 't2', project_id: 'p1', status: 'todo', owner_id: 'u1' })
-    setCompletionNextTask('t1', nextTask)
-
-    const result = await completeTask('t1', 'done')
-
-    expect(result.next).not.toBeNull()
-    expect(result.next?.id).toBe('t2')
   })
 })
 

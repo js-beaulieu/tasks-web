@@ -23,7 +23,7 @@ export async function listProjectStatuses(projectID: string): Promise<ProjectSta
 }
 
 export async function createProjectStatus(projectID: string, status: string): Promise<ProjectStatus> {
-  const created = await apiClient<ApiProjectStatus>(
+  const { data: created } = await apiClient<ApiProjectStatus>(
     `projects/${encodeURIComponent(projectID)}/statuses`,
     {
       method: 'POST',

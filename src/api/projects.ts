@@ -53,12 +53,12 @@ export async function listProjects(): Promise<Project[]> {
 }
 
 export async function getProject(projectID: string): Promise<Project> {
-  const project = await apiClient<ApiProject>(`projects/${encodeURIComponent(projectID)}`)
+  const { data: project } = await apiClient<ApiProject>(`projects/${encodeURIComponent(projectID)}`)
   return fromApiProject(project)
 }
 
 export async function createProject(input: CreateProjectInput): Promise<Project> {
-  const project = await apiClient<ApiProject>('projects', {
+  const { data: project } = await apiClient<ApiProject>('projects', {
     method: 'POST',
     body: toApiCreateBody(input),
   })
@@ -69,7 +69,7 @@ export async function updateProject(
   projectID: string,
   input: UpdateProjectInput,
 ): Promise<Project> {
-  const project = await apiClient<ApiProject>(`projects/${encodeURIComponent(projectID)}`, {
+  const { data: project } = await apiClient<ApiProject>(`projects/${encodeURIComponent(projectID)}`, {
     method: 'PATCH',
     body: toApiUpdateBody(input),
   })

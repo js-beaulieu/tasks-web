@@ -27,7 +27,6 @@ export const STATUSES = [
   { project_id: 'p1', status: 'todo', position: 0 },
   { project_id: 'p1', status: 'in_progress', position: 1 },
   { project_id: 'p1', status: 'done', position: 2 },
-  { project_id: 'p1', status: 'cancelled', position: 3 },
 ]
 
 export const MEMBERS = [{ project_id: 'p1', user_id: 'dev-user', role: 'admin' }]
