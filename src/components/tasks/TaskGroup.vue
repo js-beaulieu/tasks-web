@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { ChevronDown, ChevronRight, Loader2, Plus } from '@lucide/vue'
+import { computed } from 'vue'
+import { ChevronDown, ChevronRight } from '@lucide/vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import TaskCard from './TaskCard.vue'
+import QuickAddInput from '@/components/shared/QuickAddInput.vue'
 import type { Task } from '@/api/tasks'
 import type { ProjectStatus } from '@/api/statuses'
 import type { UsersByIDMap } from '@/composables/users/useUsersByID'
 import { friendlyStatusLabel } from '@/lib/tasks'
+import { useDraggableTasks } from '@/composables/tasks/useDraggableTasks'
 
 const props = defineProps<{
   status: string
@@ -40,77 +40,19 @@ const emit = defineEmits<{
 
 const taskTags = computed(() => props.tagsByTask ?? {})
 const taskSubtaskCount = computed(() => props.subtaskCounts ?? {})
-
-const localTasks = ref<Task[]>([])
-
-watch(
-  [() => props.tasks, () => props.dragResetKey],
-  ([tasks]) => {
-    localTasks.value = [...tasks]
-  },
-  { immediate: true },
-)
-
-const quickAddOpen = ref(false)
-const quickAddName = ref('')
-const quickAddHasText = ref(false)
-
-function onQuickAddInput(e: Event) {
-  quickAddName.value = (e.target as HTMLInputElement).value
-  quickAddHasText.value = quickAddName.value.trim().length > 0
-}
-
-function submitQuickAdd() {
-  const name = quickAddName.value.trim()
-  if (!name) return
-  emit('quickAdd', props.status, name)
-  quickAddName.value = ''
-  quickAddHasText.value = false
-}
-
-function startQuickAdd() {
-  quickAddOpen.value = true
-}
-
 const friendlyLabel = computed(() => friendlyStatusLabel(props.status))
 
-let draggedTaskId: string | null = null
-
-function onStart(evt: { item: HTMLElement }) {
-  document.body.classList.add('sortable-dragging')
-  draggedTaskId = evt.item.dataset.taskId ?? evt.item.dataset.id ?? null
-}
-
-function onEnd(evt: { from: HTMLElement; to: HTMLElement; newIndex?: number }) {
-  document.body.classList.remove('sortable-dragging')
-  const fromStatus = (evt.from.closest('[data-status]') as HTMLElement | null)?.getAttribute('data-status')
-  const toStatus = (evt.to.closest('[data-status]') as HTMLElement | null)?.getAttribute('data-status')
-  if (fromStatus && toStatus && fromStatus === toStatus && evt.newIndex != null && draggedTaskId) {
-    emit('reorder', draggedTaskId, evt.newIndex)
-  }
-  if (fromStatus !== toStatus) {
-    if (draggedTaskId) {
-      localTasks.value = localTasks.value.filter((t) => t.id !== draggedTaskId)
-    }
-    draggedTaskId = null
-    return
-  }
-  draggedTaskId = null
-}
-
-function onAdd(evt: { newIndex?: number; newDraggableIndex?: number; to: HTMLElement; item?: HTMLElement }) {
-  document.body.classList.remove('sortable-dragging')
-  const toStatus = (evt.to.closest('[data-status]') as HTMLElement | null)?.getAttribute('data-status')
-  const taskId = evt.item?.dataset?.taskId ?? evt.item?.dataset?.id ?? draggedTaskId
-  if (!toStatus || !taskId) {
-    localTasks.value = [...props.tasks]
-    draggedTaskId = null
-    return
-  }
-  const idx = evt.newDraggableIndex ?? evt.newIndex ?? 0
-  emit('reorder', taskId, idx, toStatus)
-  draggedTaskId = null
-}
+const { localTasks, onStart, onEnd, onAdd } = useDraggableTasks(
+  {
+    tasks: computed(() => props.tasks),
+    dragResetKey: computed(() => props.dragResetKey),
+    readStatus: (el: HTMLElement) => el.closest('[data-status]')?.getAttribute('data-status') ?? null,
+  },
+  (_e, taskID, newIndex, newStatus) => {
+    if (newStatus !== undefined) emit('reorder', taskID, newIndex, newStatus)
+    else emit('reorder', taskID, newIndex)
+  },
+)
 </script>
 
 <template>
@@ -135,7 +77,7 @@ function onAdd(evt: { newIndex?: number; newDraggableIndex?: number; to: HTMLEle
         v-if="dragEnabled"
         :key="dragResetKey"
         v-model="localTasks"
-        :group="dragEnabled ? { name: 'vertical-tasks', pull: true, put: true } : { name: 'vertical-tasks', pull: false, put: false }"
+        :group="{ name: 'vertical-tasks', pull: true, put: true }"
         :animation="150"
         :handle="'.drag-handle'"
         :delay="100"
@@ -189,36 +131,17 @@ function onAdd(evt: { newIndex?: number; newDraggableIndex?: number; to: HTMLEle
         />
       </template>
       <p
-        v-if="!dragEnabled && tasks.length === 0 && !quickAddOpen"
+        v-if="!dragEnabled && tasks.length === 0"
         class="py-4 text-center text-xs text-muted-foreground"
       >
         No tasks
       </p>
 
-      <div v-if="canModify && showQuickAdd" class="flex flex-col gap-1">
-        <div v-if="quickAddOpen" class="flex items-center gap-1">
-          <Input
-            v-model="quickAddName"
-            placeholder="Task name…"
-            class="h-8 text-sm"
-            @input="onQuickAddInput"
-            @keydown="(e: KeyboardEvent) => { if (e.key === 'Enter') submitQuickAdd(); if (e.key === 'Escape') quickAddOpen = false }"
-          />
-          <Button class="h-8 shrink-0" :disabled="!quickAddHasText || isAdding" @click="submitQuickAdd">
-            <Loader2 v-if="isAdding" class="size-4 animate-spin" />
-            Add
-          </Button>
-        </div>
-        <Button
-          v-else
-          variant="ghost"
-          size="sm"
-          class="h-7 text-xs text-muted-foreground"
-          @click="startQuickAdd"
-        >
-          <Plus class="mr-1 h-3 w-3" />
-          Add task
-        </Button>
+      <div v-if="canModify && showQuickAdd">
+        <QuickAddInput
+          :is-pending="isAdding"
+          @submit="(name: string) => emit('quickAdd', status, name)"
+        />
       </div>
     </div>
   </div>
