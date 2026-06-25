@@ -1,32 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Loader2, Search, Trash2 } from '@lucide/vue'
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { Trash2 } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Separator } from '@/components/ui/separator'
+import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
+import LoadingState from '@/components/shared/LoadingState.vue'
+import EmptyState from '@/components/shared/EmptyState.vue'
 import UserDisplay from '@/components/UserDisplay.vue'
+import MemberAddCard from '@/components/projects/MemberAddCard.vue'
 import { useProjectPermissions } from '@/composables/projects/useProjectPermissions'
-import { useAddProjectMember } from '@/composables/members/useAddProjectMember'
 import { useMembers } from '@/composables/members/useMembers'
 import { useMe } from '@/composables/users/useMe'
 import { useProject } from '@/composables/projects/useProject'
 import { useRemoveProjectMember } from '@/composables/members/useRemoveProjectMember'
 import { useUpdateProjectMember } from '@/composables/members/useUpdateProjectMember'
-import { useUserSearch } from '@/composables/members/useUserSearch'
-import { useDebouncedValue } from '@/composables/_ui/useDebouncedValue'
 import { useUsersByID } from '@/composables/users/useUsersByID'
 import type { MemberRole, ProjectMember } from '@/api/members'
 
@@ -47,23 +36,12 @@ const allUserIDs = computed(() => {
 })
 const { data: usersByID } = useUsersByID(allUserIDs)
 
-const searchQuery = ref('')
-const addRole = ref<MemberRole>('read')
 const editedRoles = ref<Record<string, MemberRole>>({})
 const pendingRemoval = ref<ProjectMember | null>(null)
 const pendingRoleChange = ref<{ member: ProjectMember; role: MemberRole } | null>(null)
 
-const addMemberMutation = useAddProjectMember()
 const updateMemberMutation = useUpdateProjectMember()
 const removeMemberMutation = useRemoveProjectMember()
-
-const searchQueryTrimmed = computed(() => searchQuery.value.trim())
-const { debounced: debouncedSearchQuery, isDebouncing: isDebouncingSearch } = useDebouncedValue(
-  searchQueryTrimmed,
-  300,
-  (query) => query.length >= 2,
-)
-const { data: searchResults, isFetching: isSearching, isError: searchError } = useUserSearch(debouncedSearchQuery)
 
 const ROLE_LABELS: Record<MemberRole, string> = {
   admin: 'Admin',
@@ -94,11 +72,6 @@ const displayedMembers = computed(() => {
 })
 
 const memberIDs = computed(() => new Set(displayedMembers.value.map((member) => member.userId)))
-const availableSearchResults = computed(() =>
-  (searchResults.value ?? []).filter((user) => !memberIDs.value.has(user.id)),
-)
-
-const isSearchBusy = computed(() => isDebouncingSearch.value || isSearching.value)
 
 watch(
   displayedMembers,
@@ -122,17 +95,6 @@ function canManageMember(member: ProjectMember): boolean {
 
 function resetEditedRole(member: ProjectMember): void {
   editedRoles.value[member.userId] = member.role
-}
-
-function addCollaborator(userID: string): void {
-  addMemberMutation.mutate(
-    { projectID: props.projectID, input: { userId: userID, role: addRole.value } },
-    {
-      onSuccess: () => {
-        searchQuery.value = ''
-      },
-    },
-  )
 }
 
 function requestRoleChange(member: ProjectMember): void {
@@ -176,89 +138,13 @@ function confirmRemoval(): void {
 
 <template>
   <div class="flex flex-col gap-4">
-    <Card v-if="isAdmin">
-      <CardHeader>
-        <CardTitle>Add collaborator</CardTitle>
-        <CardDescription>Search by name or email, then choose the role to grant.</CardDescription>
-      </CardHeader>
-      <CardContent class="flex flex-col gap-4">
-        <div class="grid gap-4 sm:grid-cols-[1fr_10rem]">
-          <div class="flex flex-col gap-2">
-            <Label for="member-search">Search users</Label>
-            <div class="relative">
-              <Search v-if="!isSearchBusy" class="pointer-events-none absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
-              <Loader2 v-else class="pointer-events-none absolute top-2.5 left-2.5 h-4 w-4 animate-spin text-primary" />
-              <Input
-                id="member-search"
-                v-model="searchQuery"
-                class="pl-8"
-                placeholder="Search by name or email"
-              />
-            </div>
-            <p
-              v-if="searchQueryTrimmed.length > 0 && searchQueryTrimmed.length < 2"
-              class="text-xs text-muted-foreground"
-            >
-              Type at least 2 characters to search.
-            </p>
-          </div>
+    <MemberAddCard
+      v-if="isAdmin"
+      :project-i-d="projectID"
+      :existing-member-ids="memberIDs"
+    />
 
-          <div class="flex flex-col gap-2">
-            <Label for="member-role">Role</Label>
-            <NativeSelect
-              id="member-role"
-              v-model="addRole"
-              class="w-full"
-              aria-label="Role for new collaborator"
-            >
-              <NativeSelectOption value="read">Read</NativeSelectOption>
-              <NativeSelectOption value="modify">Modify</NativeSelectOption>
-              <NativeSelectOption value="admin">Admin</NativeSelectOption>
-            </NativeSelect>
-          </div>
-        </div>
-
-        <div v-if="searchQueryTrimmed.length >= 2" class="flex flex-col gap-2">
-          <div v-if="isSearchBusy" class="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-            <div class="flex items-center gap-2">
-              <Loader2 class="h-4 w-4 animate-spin text-primary" />
-              <span>Searching users...</span>
-            </div>
-          </div>
-          <p v-else-if="searchError" class="text-sm text-destructive">
-            Could not search users right now.
-          </p>
-          <p v-else-if="availableSearchResults.length === 0" class="text-sm text-muted-foreground">
-            No matching users available to add.
-          </p>
-          <div v-else class="flex flex-col gap-2">
-            <div
-              v-for="user in availableSearchResults"
-              :key="user.id"
-              class="flex items-center justify-between gap-3 rounded-lg border p-3"
-            >
-              <UserDisplay :user="user" />
-              <Button
-                size="sm"
-                :disabled="addMemberMutation.isPending.value"
-                @click="addCollaborator(user.id)"
-              >
-                <Loader2 v-if="addMemberMutation.isPending.value" class="mr-1 h-4 w-4 animate-spin" />
-                Add
-              </Button>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-
-    <div
-      v-if="isLoading"
-      class="flex flex-col items-center gap-3 py-12"
-    >
-      <Loader2 class="h-8 w-8 animate-spin text-primary" />
-      <p class="text-sm text-muted-foreground">Loading members...</p>
-    </div>
+    <LoadingState v-if="isLoading" message="Loading members…" />
 
     <div v-else class="flex flex-col gap-3">
       <div
@@ -328,50 +214,38 @@ function confirmRemoval(): void {
         <Separator />
       </div>
 
-      <p
+      <EmptyState
         v-if="displayedMembers.length === 0"
-        class="py-4 text-center text-sm text-muted-foreground"
-      >
-        No members found.
-      </p>
+        message="No members found."
+      />
     </div>
 
-    <AlertDialog :open="!!pendingRoleChange" @update:open="(value) => { if (!value) closeRoleChangeDialog() }">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Change collaborator role?</AlertDialogTitle>
-          <AlertDialogDescription v-if="pendingRoleChange">
-            Change <strong>{{ memberName(pendingRoleChange.member.userId) }}</strong> to
-            <strong>{{ ROLE_LABELS[pendingRoleChange.role] }}</strong>?
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel @click="closeRoleChangeDialog">Cancel</AlertDialogCancel>
-          <Button :disabled="updateMemberMutation.isPending.value" @click="confirmRoleChange">
-            <Loader2 v-if="updateMemberMutation.isPending.value" class="mr-1 h-4 w-4 animate-spin" />
-            Confirm
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      :open="!!pendingRoleChange"
+      title="Change collaborator role?"
+      confirm-label="Confirm"
+      :is-pending="updateMemberMutation.isPending.value"
+      @update:open="(value: boolean) => { if (!value) closeRoleChangeDialog() }"
+      @confirm="confirmRoleChange"
+    >
+      <template #description v-if="pendingRoleChange">
+        Change <strong>{{ memberName(pendingRoleChange.member.userId) }}</strong> to
+        <strong>{{ ROLE_LABELS[pendingRoleChange.role] }}</strong>?
+      </template>
+    </ConfirmDialog>
 
-    <AlertDialog :open="!!pendingRemoval" @update:open="(value) => { if (!value) pendingRemoval = null }">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Remove collaborator?</AlertDialogTitle>
-          <AlertDialogDescription v-if="pendingRemoval">
-            Remove <strong>{{ memberName(pendingRemoval.userId) }}</strong> from this project?
-            Any tasks assigned to them will be reassigned to the project owner.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel @click="pendingRemoval = null">Cancel</AlertDialogCancel>
-          <Button variant="destructive" :disabled="removeMemberMutation.isPending.value" @click="confirmRemoval">
-            <Loader2 v-if="removeMemberMutation.isPending.value" class="mr-1 h-4 w-4 animate-spin" />
-            Remove
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      :open="!!pendingRemoval"
+      title="Remove collaborator?"
+      confirm-label="Remove"
+      :is-pending="removeMemberMutation.isPending.value"
+      @update:open="(value: boolean) => { if (!value) pendingRemoval = null }"
+      @confirm="confirmRemoval"
+    >
+      <template #description v-if="pendingRemoval">
+        Remove <strong>{{ memberName(pendingRemoval.userId) }}</strong> from this project?
+        Any tasks assigned to them will be reassigned to the project owner.
+      </template>
+    </ConfirmDialog>
   </div>
 </template>
