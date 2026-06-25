@@ -122,13 +122,14 @@ const emit = defineEmits<{
         :model-value="view"
         variant="outline"
         size="sm"
+        class="h-7 rounded-md"
         @update:model-value="(v) => { if (v) emit('update:view', v as TaskViewMode) }"
       >
-        <ToggleGroupItem value="vertical" class="text-xs">
+        <ToggleGroupItem value="vertical" class="h-7 text-xs">
           <List class="mr-1 h-3.5 w-3.5" />
           List
         </ToggleGroupItem>
-        <ToggleGroupItem value="board" class="text-xs">
+        <ToggleGroupItem value="board" class="h-7 text-xs">
           <LayoutGrid class="mr-1 h-3.5 w-3.5" />
           Board
         </ToggleGroupItem>
