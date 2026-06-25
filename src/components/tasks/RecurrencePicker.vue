@@ -51,7 +51,9 @@ const selectedFreq = ref<FreqOption>('WEEKLY')
 const interval = ref(1)
 const customText = ref('')
 
-function isPreset(rruleStr: string): { freq: Exclude<FreqOption, 'CUSTOM'>; intervalVal: number } | null {
+function isPreset(
+  rruleStr: string,
+): { freq: Exclude<FreqOption, 'CUSTOM'>; intervalVal: number } | null {
   try {
     const rule = rrulestr(rruleStr)
     const freq = RRULE_TO_FREQ[rule.options.freq]
@@ -59,14 +61,14 @@ function isPreset(rruleStr: string): { freq: Exclude<FreqOption, 'CUSTOM'>; inte
     const opts = rule.options
     const hasExtras = Boolean(
       opts.byweekday?.length ||
-        opts.bymonthday?.length ||
-        opts.byyearday?.length ||
-        opts.byweekno?.length ||
-        opts.bymonth?.length ||
-        opts.byeaster !== undefined && opts.byeaster !== null ||
-        opts.wkst !== undefined && opts.wkst !== null ||
-        opts.count ||
-        opts.until,
+      opts.bymonthday?.length ||
+      opts.byyearday?.length ||
+      opts.byweekno?.length ||
+      opts.bymonth?.length ||
+      (opts.byeaster !== undefined && opts.byeaster !== null) ||
+      (opts.wkst !== undefined && opts.wkst !== null) ||
+      opts.count ||
+      opts.until,
     )
     if (hasExtras) return null
     return { freq, intervalVal: opts.interval || 1 }
@@ -167,19 +169,12 @@ const hasRecurrence = computed(() => Boolean(props.modelValue && props.modelValu
     <div class="flex items-start gap-2">
       <RotateCw class="mt-2 size-4 shrink-0 text-muted-foreground" />
       <div class="flex-1 flex flex-col gap-2">
-        <Select
-          :model-value="selectedFreq"
-          @update:model-value="(v) => onFreqChange(String(v))"
-        >
+        <Select :model-value="selectedFreq" @update:model-value="(v) => onFreqChange(String(v))">
           <SelectTrigger class="w-full">
             <SelectValue placeholder="Select frequency" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem
-              v-for="opt in PRESET_OPTIONS"
-              :key="opt.value"
-              :value="opt.value"
-            >
+            <SelectItem v-for="opt in PRESET_OPTIONS" :key="opt.value" :value="opt.value">
               {{ opt.label }}
             </SelectItem>
           </SelectContent>
@@ -197,9 +192,10 @@ const hasRecurrence = computed(() => Boolean(props.modelValue && props.modelValu
             @update:model-value="onIntervalInput"
           />
           <span class="text-xs text-muted-foreground">
-            {{ interval === 1
-              ? selectedFreq.toLowerCase().replace(/ly$/, '')
-              : selectedFreq.toLowerCase().replace(/ly$/, '') + 's'
+            {{
+              interval === 1
+                ? selectedFreq.toLowerCase().replace(/ly$/, '')
+                : selectedFreq.toLowerCase().replace(/ly$/, '') + 's'
             }}
           </span>
         </div>
@@ -231,10 +227,7 @@ const hasRecurrence = computed(() => Boolean(props.modelValue && props.modelValu
       {{ summary }}
     </p>
 
-    <p
-      v-if="needsDueDate"
-      class="text-xs text-amber-600 dark:text-amber-500"
-    >
+    <p v-if="needsDueDate" class="text-xs text-amber-600 dark:text-amber-500">
       Recurring tasks require a due date.
     </p>
   </div>

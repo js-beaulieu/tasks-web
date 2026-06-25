@@ -1,4 +1,9 @@
-import { useMutation, useQueryClient, type QueryClient, type UseMutationOptions } from '@tanstack/vue-query'
+import {
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+  type UseMutationOptions,
+} from '@tanstack/vue-query'
 import { showErrorToast } from '@/lib/error'
 
 type QueryKey = readonly unknown[]

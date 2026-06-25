@@ -2,7 +2,14 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { CalendarClock, Pencil, Trash2 } from '@lucide/vue'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import UserDisplay from '@/components/UserDisplay.vue'
 import type { Project } from '@/api/projects'
@@ -22,23 +29,19 @@ const emit = defineEmits<{
 }>()
 
 const overdue = computed(() => props.project.dueDate && isOverdue(props.project.dueDate))
-const hasDescription = computed(() => props.project.description && props.project.description.trim().length > 0)
+const hasDescription = computed(
+  () => props.project.description && props.project.description.trim().length > 0,
+)
 </script>
 
 <template>
   <Card class="flex flex-col">
-    <RouterLink
-      :to="`/projects/${project.id}`"
-      class="group flex flex-1 flex-col"
-    >
+    <RouterLink :to="`/projects/${project.id}`" class="group flex flex-1 flex-col">
       <CardHeader class="pb-2">
         <CardTitle class="text-sm font-semibold group-hover:text-primary">
           {{ project.name }}
         </CardTitle>
-        <CardDescription
-          v-if="hasDescription"
-          class="line-clamp-2 text-xs"
-        >
+        <CardDescription v-if="hasDescription" class="line-clamp-2 text-xs">
           {{ project.description }}
         </CardDescription>
       </CardHeader>

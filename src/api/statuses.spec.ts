@@ -44,9 +44,7 @@ describe('createProjectStatus', () => {
   it('posts and maps created status', async () => {
     seedMockData({
       projects: [makeApiProject({ id: 'p1', owner_id: 'dev-user' })],
-      statuses: [
-        makeApiProjectStatus({ project_id: 'p1', status: 'todo', position: 0 }),
-      ],
+      statuses: [makeApiProjectStatus({ project_id: 'p1', status: 'todo', position: 0 })],
     })
 
     const result = await createProjectStatus('p1', 'review')
@@ -73,9 +71,7 @@ describe('createProjectStatus', () => {
   it('throws on duplicate status (409)', async () => {
     seedMockData({
       projects: [makeApiProject({ id: 'p1', owner_id: 'dev-user' })],
-      statuses: [
-        makeApiProjectStatus({ project_id: 'p1', status: 'todo', position: 0 }),
-      ],
+      statuses: [makeApiProjectStatus({ project_id: 'p1', status: 'todo', position: 0 })],
     })
 
     await expect(createProjectStatus('p1', 'todo')).rejects.toThrow('Conflict')
@@ -115,19 +111,19 @@ describe('deleteProjectStatus', () => {
   it('throws on status in use by tasks (409)', async () => {
     seedMockData({
       projects: [makeApiProject({ id: 'p1', owner_id: 'dev-user' })],
-      statuses: [
-        makeApiProjectStatus({ project_id: 'p1', status: 'todo', position: 0 }),
+      statuses: [makeApiProjectStatus({ project_id: 'p1', status: 'todo', position: 0 })],
+      tasks: [
+        {
+          id: 't1',
+          project_id: 'p1',
+          name: 'Task in todo',
+          status: 'todo',
+          owner_id: 'dev-user',
+          position: 0,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-02T00:00:00Z',
+        },
       ],
-      tasks: [{
-        id: 't1',
-        project_id: 'p1',
-        name: 'Task in todo',
-        status: 'todo',
-        owner_id: 'dev-user',
-        position: 0,
-        created_at: '2026-01-01T00:00:00Z',
-        updated_at: '2026-01-02T00:00:00Z',
-      }],
     })
 
     await expect(deleteProjectStatus('p1', 'todo')).rejects.toThrow('Conflict')

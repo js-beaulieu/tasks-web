@@ -9,18 +9,20 @@ const statusesRef = ref([
 
 const createPending = ref(false)
 const deletePending = ref(false)
-const createMutateAsync = vi.fn<
-  (
-    input: { projectID: string; status: string },
-    opts?: { onSuccess?: () => void; onError?: (error: Error) => void },
-  ) => Promise<void>
->()
-const deleteMutateAsync = vi.fn<
-  (
-    input: { projectID: string; status: string },
-    opts?: { onSuccess?: () => void; onError?: (error: Error) => void },
-  ) => Promise<void>
->()
+const createMutateAsync =
+  vi.fn<
+    (
+      input: { projectID: string; status: string },
+      opts?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => Promise<void>
+  >()
+const deleteMutateAsync =
+  vi.fn<
+    (
+      input: { projectID: string; status: string },
+      opts?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => Promise<void>
+  >()
 
 vi.mock('@/composables/statuses/useStatuses', () => ({
   useStatuses: () => ({ data: statusesRef }),
@@ -93,7 +95,9 @@ describe('StatusManagementSection', () => {
       props: { projectID: 'p1', canAdmin: true },
     })
 
-    const deleteButtons = wrapper.findAll('button').filter((b) => b.attributes('aria-label')?.includes('Delete status'))
+    const deleteButtons = wrapper
+      .findAll('button')
+      .filter((b) => b.attributes('aria-label')?.includes('Delete status'))
     await deleteButtons[0]!.trigger('click')
     await flushPromises()
 

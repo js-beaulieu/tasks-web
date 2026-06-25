@@ -67,31 +67,23 @@ function close() {
 </script>
 
 <template>
-  <Dialog
-    :open="open"
-    @update:open="emit('update:open', $event)"
-  >
+  <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent>
       <DialogHeader>
         <DialogTitle>{{ title }}</DialogTitle>
         <DialogDescription>
-          {{ isEdit ? 'Update the project name and description.' : 'Create a new project to organize your tasks.' }}
+          {{
+            isEdit
+              ? 'Update the project name and description.'
+              : 'Create a new project to organize your tasks.'
+          }}
         </DialogDescription>
       </DialogHeader>
 
-      <form
-        id="project-form"
-        class="flex flex-col gap-4"
-        @submit.prevent="handleSubmit"
-      >
+      <form id="project-form" class="flex flex-col gap-4" @submit.prevent="handleSubmit">
         <div class="flex flex-col gap-2">
           <Label for="project-name">Name</Label>
-          <Input
-            id="project-name"
-            v-model="name"
-            placeholder="Project name"
-            required
-          />
+          <Input id="project-name" v-model="name" placeholder="Project name" required />
         </div>
         <div class="flex flex-col gap-2">
           <Label for="project-description">Description</Label>
@@ -105,18 +97,8 @@ function close() {
       </form>
 
       <DialogFooter>
-        <Button
-          type="button"
-          variant="outline"
-          @click="close"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          form="project-form"
-          :disabled="isPending"
-        >
+        <Button type="button" variant="outline" @click="close"> Cancel </Button>
+        <Button type="submit" form="project-form" :disabled="isPending">
           <Loader2 v-if="isPending" class="size-4 animate-spin" />
           {{ isEdit ? 'Save' : 'Create' }}
         </Button>

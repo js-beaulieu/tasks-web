@@ -24,8 +24,8 @@ const emit = defineEmits<{
     @confirm="emit('confirm')"
   >
     <template #description>
-      This will permanently delete <strong>{{ project.name }}</strong>.
-      This action cannot be undone.
+      This will permanently delete <strong>{{ project.name }}</strong
+      >. This action cannot be undone.
     </template>
   </ConfirmDialog>
 </template>

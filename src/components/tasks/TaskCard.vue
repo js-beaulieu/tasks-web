@@ -54,9 +54,7 @@ function openDetail() {
   emit('openDetail', props.task.id)
 }
 
-const statusOptions = computed(() =>
-  props.statuses.map((s) => s.status),
-)
+const statusOptions = computed(() => props.statuses.map((s) => s.status))
 </script>
 
 <template>
@@ -75,10 +73,7 @@ const statusOptions = computed(() =>
       </div>
       <div class="min-w-0 flex-1">
         <div class="font-medium leading-snug">{{ task.name }}</div>
-        <p
-          v-if="descriptionExcerpt"
-          class="mt-1 line-clamp-1 text-xs text-muted-foreground"
-        >
+        <p v-if="descriptionExcerpt" class="mt-1 line-clamp-1 text-xs text-muted-foreground">
           {{ descriptionExcerpt }}
         </p>
 
@@ -117,10 +112,7 @@ const statusOptions = computed(() =>
       </div>
 
       <DropdownMenu v-if="canModify">
-        <DropdownMenuTrigger
-          as-child
-          @click.stop
-        >
+        <DropdownMenuTrigger as-child @click.stop>
           <Button
             variant="ghost"
             size="icon"
@@ -130,9 +122,7 @@ const statusOptions = computed(() =>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" @click.stop>
-          <DropdownMenuItem @click="openDetail">
-            Open details
-          </DropdownMenuItem>
+          <DropdownMenuItem @click="openDetail"> Open details </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             v-for="s in statusOptions.filter((s) => s !== task.status)"

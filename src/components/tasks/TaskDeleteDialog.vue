@@ -39,8 +39,8 @@ function confirmDelete() {
     @confirm="confirmDelete"
   >
     <template #description>
-      This will permanently delete <strong>{{ task.name }}</strong> and all its subtasks.
-      This action cannot be undone.
+      This will permanently delete <strong>{{ task.name }}</strong> and all its subtasks. This
+      action cannot be undone.
     </template>
   </ConfirmDialog>
 </template>

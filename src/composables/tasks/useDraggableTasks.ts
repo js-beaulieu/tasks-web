@@ -32,7 +32,13 @@ export function useDraggableTasks(
     document.body.classList.remove('sortable-dragging')
     const fromStatus = opts.readStatus(evt.from)
     const toStatus = opts.readStatus(evt.to)
-    if (fromStatus && toStatus && fromStatus === toStatus && evt.newIndex != null && draggedTaskId) {
+    if (
+      fromStatus &&
+      toStatus &&
+      fromStatus === toStatus &&
+      evt.newIndex != null &&
+      draggedTaskId
+    ) {
       emit('reorder', draggedTaskId, evt.newIndex)
     }
     if (fromStatus !== toStatus) {
@@ -45,7 +51,12 @@ export function useDraggableTasks(
     draggedTaskId = null
   }
 
-  function onAdd(evt: { newIndex?: number; newDraggableIndex?: number; to: HTMLElement; item?: HTMLElement }) {
+  function onAdd(evt: {
+    newIndex?: number
+    newDraggableIndex?: number
+    to: HTMLElement
+    item?: HTMLElement
+  }) {
     document.body.classList.remove('sortable-dragging')
     const toStatus = opts.readStatus(evt.to)
     const taskId = evt.item?.dataset?.taskId ?? evt.item?.dataset?.id ?? draggedTaskId

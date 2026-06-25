@@ -33,7 +33,11 @@ function toHttpResponse(spec: MockResponseSpec): Response {
 
 async function parseJsonBody(request: Request): Promise<unknown> {
   const contentType = request.headers.get('content-type') ?? ''
-  if (request.method === 'GET' || request.method === 'HEAD' || !contentType.includes('application/json')) {
+  if (
+    request.method === 'GET' ||
+    request.method === 'HEAD' ||
+    !contentType.includes('application/json')
+  ) {
     return undefined
   }
   return request.json()

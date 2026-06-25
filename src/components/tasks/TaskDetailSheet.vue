@@ -3,12 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { uniq } from 'es-toolkit'
 import { toast } from 'vue-sonner'
-import {
-  RotateCw,
-  Trash2,
-  Pencil,
-  X,
-} from '@lucide/vue'
+import { RotateCw, Trash2, Pencil, X } from '@lucide/vue'
 import {
   Sheet,
   SheetContent,
@@ -28,11 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { CalendarClock } from '@lucide/vue'
 import { format } from 'date-fns'
@@ -88,16 +79,28 @@ const moveConfirmationOpen = ref(false)
 const pendingMoveConfirmation = ref<UpdateTaskInput | null>(null)
 
 const {
-  editName, editDescription, editProjectId, editStatus,
-  editAssigneeId, editDueDate, editRecurrence, dirty,
-  resetEditFields, buildUpdateInput,
+  editName,
+  editDescription,
+  editProjectId,
+  editStatus,
+  editAssigneeId,
+  editDueDate,
+  editRecurrence,
+  dirty,
+  resetEditFields,
+  buildUpdateInput,
 } = useTaskEditState(task)
 
 const updateMutation = useUpdateTask()
 
 const projectOptions = computed(() =>
   (projects.value ?? [])
-    .filter((entry) => entry.id === projectID.value || entry.effectiveRole === 'modify' || entry.effectiveRole === 'admin')
+    .filter(
+      (entry) =>
+        entry.id === projectID.value ||
+        entry.effectiveRole === 'modify' ||
+        entry.effectiveRole === 'admin',
+    )
     .map((entry) => ({ value: entry.id, label: entry.name })),
 )
 
@@ -110,18 +113,27 @@ const memberOptions = computed(() => {
   return opts
 })
 
-const owner = computed(() => task.value ? usersByID.value?.[task.value.ownerId] : undefined)
-const assignee = computed(() => task.value?.assigneeId ? usersByID.value?.[task.value.assigneeId] : undefined)
-const currentStatusLabel = computed(() => task.value ? friendlyStatusLabel(task.value.status) : '')
-const dueDateLabel = computed(() => task.value?.dueDate ? formatDate(task.value.dueDate) : 'None')
-const dueDateOverdue = computed(() => task.value?.dueDate ? isOverdue(task.value.dueDate) : false)
+const owner = computed(() => (task.value ? usersByID.value?.[task.value.ownerId] : undefined))
+const assignee = computed(() =>
+  task.value?.assigneeId ? usersByID.value?.[task.value.assigneeId] : undefined,
+)
+const currentStatusLabel = computed(() =>
+  task.value ? friendlyStatusLabel(task.value.status) : '',
+)
+const dueDateLabel = computed(() => (task.value?.dueDate ? formatDate(task.value.dueDate) : 'None'))
+const dueDateOverdue = computed(() => (task.value?.dueDate ? isOverdue(task.value.dueDate) : false))
 const formattedEditDueDate = computed(() => {
   if (!editDueDate.value) return ''
-  return format(new Date(editDueDate.value.year, editDueDate.value.month - 1, editDueDate.value.day), 'MMM d, yyyy')
+  return format(
+    new Date(editDueDate.value.year, editDueDate.value.month - 1, editDueDate.value.day),
+    'MMM d, yyyy',
+  )
 })
 
 function handleMoveSuccess(updatedProjectID: string, updatedTaskID: string) {
-  const targetProjectName = projectOptions.value.find((option) => option.value === updatedProjectID)?.label ?? 'target project'
+  const targetProjectName =
+    projectOptions.value.find((option) => option.value === updatedProjectID)?.label ??
+    'target project'
   dirty.value = false
   editing.value = false
   close()
@@ -130,7 +142,10 @@ function handleMoveSuccess(updatedProjectID: string, updatedTaskID: string) {
     action: {
       label: 'Open task',
       onClick: () => {
-        void router.push({ name: 'task-detail', params: { projectID: updatedProjectID, taskID: updatedTaskID } })
+        void router.push({
+          name: 'task-detail',
+          params: { projectID: updatedProjectID, taskID: updatedTaskID },
+        })
       },
     },
   })
@@ -201,11 +216,15 @@ function close() {
 </script>
 
 <template>
-  <Sheet :open="open" @update:open="(v: boolean) => { if (!v) close() }">
-    <SheetContent
-      side="right"
-      class="w-full sm:max-w-lg overflow-y-auto"
-    >
+  <Sheet
+    :open="open"
+    @update:open="
+      (v: boolean) => {
+        if (!v) close()
+      }
+    "
+  >
+    <SheetContent side="right" class="w-full sm:max-w-lg overflow-y-auto">
       <SheetHeader>
         <SheetTitle>Task Details</SheetTitle>
         <SheetDescription v-if="isLoading">Loading task…</SheetDescription>
@@ -304,9 +323,13 @@ function close() {
           <div class="flex flex-col gap-2">
             <Label>Project</Label>
             <Select v-model="editProjectId">
-              <SelectTrigger class="w-full"><SelectValue placeholder="Select project" /></SelectTrigger>
+              <SelectTrigger class="w-full"
+                ><SelectValue placeholder="Select project"
+              /></SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="opt in projectOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+                <SelectItem v-for="opt in projectOptions" :key="opt.value" :value="opt.value">{{
+                  opt.label
+                }}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -319,9 +342,13 @@ function close() {
           <div class="flex flex-col gap-2">
             <Label>Assignee</Label>
             <Select v-model="editAssigneeId">
-              <SelectTrigger class="w-full"><SelectValue placeholder="Select assignee" /></SelectTrigger>
+              <SelectTrigger class="w-full"
+                ><SelectValue placeholder="Select assignee"
+              /></SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="opt in memberOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+                <SelectItem v-for="opt in memberOptions" :key="opt.value" :value="opt.value">{{
+                  opt.label
+                }}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -339,7 +366,9 @@ function close() {
               <PopoverContent class="w-auto p-0" align="start">
                 <Calendar v-model="editDueDate" :week-starts-on="1" />
                 <div class="border-t p-2">
-                  <Button variant="ghost" size="sm" class="w-full" @click="editDueDate = undefined">Clear date</Button>
+                  <Button variant="ghost" size="sm" class="w-full" @click="editDueDate = undefined"
+                    >Clear date</Button
+                  >
                 </div>
               </PopoverContent>
             </Popover>
@@ -349,7 +378,7 @@ function close() {
             :model-value="editRecurrence"
             :due-date="dateValueToISO(editDueDate) ?? task.dueDate"
             data-testid="recurrence-picker"
-            @update:model-value="(v: string | null) => editRecurrence = v"
+            @update:model-value="(v: string | null) => (editRecurrence = v)"
           />
 
           <Separator />
@@ -372,7 +401,12 @@ function close() {
 
         <Separator />
 
-        <TaskSubtasksSection :task="task" :project-i-d="projectID" :statuses="statuses ?? []" :can-modify="canModify" />
+        <TaskSubtasksSection
+          :task="task"
+          :project-i-d="projectID"
+          :statuses="statuses ?? []"
+          :can-modify="canModify"
+        />
 
         <TaskDeleteDialog
           :open="deleteDialogOpen"
@@ -390,7 +424,10 @@ function close() {
           @confirm="confirmMove"
         >
           <template #description>
-            The task will stay closed on this project page after the move. If the target project does not support the current status, it will fall back to that project's first status. If the current assignee is not a member of the target project, the task will be reassigned to the target project's owner.
+            The task will stay closed on this project page after the move. If the target project
+            does not support the current status, it will fall back to that project's first status.
+            If the current assignee is not a member of the target project, the task will be
+            reassigned to the target project's owner.
           </template>
         </ConfirmDialog>
       </div>

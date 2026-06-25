@@ -33,7 +33,11 @@ const { debounced: debouncedSearchQuery, isDebouncing: isDebouncingSearch } = us
   300,
   (query) => query.length >= 2,
 )
-const { data: searchResults, isFetching: isSearching, isError: searchError } = useUserSearch(debouncedSearchQuery)
+const {
+  data: searchResults,
+  isFetching: isSearching,
+  isError: searchError,
+} = useUserSearch(debouncedSearchQuery)
 
 const availableSearchResults = computed(() =>
   (searchResults.value ?? []).filter((user: User) => !props.existingMemberIds.has(user.id)),
@@ -65,8 +69,14 @@ function addCollaborator(userID: string): void {
         <div class="flex flex-col gap-2">
           <Label for="member-search">Search users</Label>
           <div class="relative">
-            <Search v-if="!isSearchBusy" class="pointer-events-none absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
-            <Loader2 v-else class="pointer-events-none absolute top-2.5 left-2.5 h-4 w-4 animate-spin text-primary" />
+            <Search
+              v-if="!isSearchBusy"
+              class="pointer-events-none absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground"
+            />
+            <Loader2
+              v-else
+              class="pointer-events-none absolute top-2.5 left-2.5 h-4 w-4 animate-spin text-primary"
+            />
             <Input
               id="member-search"
               v-model="searchQuery"
@@ -98,7 +108,10 @@ function addCollaborator(userID: string): void {
       </div>
 
       <div v-if="searchQueryTrimmed.length >= 2" class="flex flex-col gap-2">
-        <div v-if="isSearchBusy" class="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+        <div
+          v-if="isSearchBusy"
+          class="rounded-lg border border-dashed p-3 text-sm text-muted-foreground"
+        >
           <div class="flex items-center gap-2">
             <Loader2 class="h-4 w-4 animate-spin text-primary" />
             <span>Searching users...</span>

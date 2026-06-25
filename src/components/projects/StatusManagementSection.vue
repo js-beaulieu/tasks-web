@@ -46,7 +46,9 @@ const existingStatusSet = computed(() => {
 
 const newStatusHasText = computed(() => newStatusValue.value.trim().length > 0)
 const newStatusDuplicate = computed(
-  () => newStatusHasText.value && existingStatusSet.value.has(newStatusValue.value.trim().toLowerCase()),
+  () =>
+    newStatusHasText.value &&
+    existingStatusSet.value.has(newStatusValue.value.trim().toLowerCase()),
 )
 
 async function submitNewStatus() {
@@ -104,9 +106,7 @@ async function confirmDeleteStatus() {
 <template>
   <div class="flex flex-col gap-3">
     <div class="flex items-center justify-between">
-      <h3 class="text-sm font-semibold">
-        Statuses
-      </h3>
+      <h3 class="text-sm font-semibold">Statuses</h3>
       <Button
         v-if="canAdmin && !addStatusOpen"
         variant="ghost"
@@ -119,21 +119,25 @@ async function confirmDeleteStatus() {
       </Button>
     </div>
 
-    <div
-      v-if="addStatusOpen"
-      class="flex flex-col gap-2"
-    >
+    <div v-if="addStatusOpen" class="flex flex-col gap-2">
       <div class="flex items-center gap-1">
         <Input
           v-model="newStatusValue"
           placeholder="Status value (e.g. review, blocked)…"
           class="h-8 text-sm"
           :disabled="createStatusMutation.isPending.value"
-          @keydown="(e: KeyboardEvent) => { if (e.key === 'Enter') submitNewStatus(); if (e.key === 'Escape') cancelAddStatus() }"
+          @keydown="
+            (e: KeyboardEvent) => {
+              if (e.key === 'Enter') submitNewStatus()
+              if (e.key === 'Escape') cancelAddStatus()
+            }
+          "
         />
         <Button
           class="h-8 shrink-0"
-          :disabled="!newStatusHasText || newStatusDuplicate || createStatusMutation.isPending.value"
+          :disabled="
+            !newStatusHasText || newStatusDuplicate || createStatusMutation.isPending.value
+          "
           @click="submitNewStatus"
         >
           <Loader2 v-if="createStatusMutation.isPending.value" class="size-4 animate-spin" />
@@ -149,16 +153,10 @@ async function confirmDeleteStatus() {
           Cancel
         </Button>
       </div>
-      <p
-        v-if="newStatusDuplicate"
-        class="text-xs text-destructive"
-      >
+      <p v-if="newStatusDuplicate" class="text-xs text-destructive">
         A status with this value already exists.
       </p>
-      <p
-        v-if="conflictStatus"
-        class="text-xs text-destructive"
-      >
+      <p v-if="conflictStatus" class="text-xs text-destructive">
         "{{ conflictStatus }}" already exists.
       </p>
     </div>
@@ -167,13 +165,11 @@ async function confirmDeleteStatus() {
       v-if="deleteStatusConflict"
       class="rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive"
     >
-      Cannot delete "{{ deleteStatusConflict }}" — it is in use by tasks. Move or reassign tasks from this status first.
+      Cannot delete "{{ deleteStatusConflict }}" — it is in use by tasks. Move or reassign tasks
+      from this status first.
     </div>
 
-    <div
-      v-if="statuses && statuses.length > 0"
-      class="flex flex-col gap-1"
-    >
+    <div v-if="statuses && statuses.length > 0" class="flex flex-col gap-1">
       <div
         v-for="s in statuses"
         :key="s.status"
@@ -196,25 +192,24 @@ async function confirmDeleteStatus() {
         </Button>
       </div>
     </div>
-    <p
-      v-else
-      class="text-xs text-muted-foreground"
-    >
-      No statuses configured.
-    </p>
+    <p v-else class="text-xs text-muted-foreground">No statuses configured.</p>
 
     <ConfirmDialog
       :open="!!deleteStatusTarget"
       title="Delete status?"
       confirm-label="Delete"
       :is-pending="deleteStatusMutation.isPending.value"
-      @update:open="(v: boolean) => { if (!v) cancelDeleteStatus() }"
+      @update:open="
+        (v: boolean) => {
+          if (!v) cancelDeleteStatus()
+        }
+      "
       @confirm="confirmDeleteStatus"
     >
       <template #description>
         This will remove <strong>{{ friendlyStatusLabel(deleteStatusTarget ?? '') }}</strong>
-        <span class="font-mono text-xs">({{ deleteStatusTarget }})</span> from this project.
-        Tasks using this status will not be affected until they are moved.
+        <span class="font-mono text-xs">({{ deleteStatusTarget }})</span> from this project. Tasks
+        using this status will not be affected until they are moved.
       </template>
     </ConfirmDialog>
   </div>

@@ -4,10 +4,7 @@ import type { MaybeRef } from 'vue'
 import { listProjectTasks } from '@/api/tasks'
 import { qk, type TaskFilters } from '@/lib/queryKeys'
 
-export function useTasks(
-  projectID: MaybeRef<string>,
-  filters?: MaybeRef<TaskFilters>,
-) {
+export function useTasks(projectID: MaybeRef<string>, filters?: MaybeRef<TaskFilters>) {
   const id = computed(() => toValue(projectID))
   const f = computed(() => toValue(filters))
 

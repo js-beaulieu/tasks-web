@@ -60,7 +60,10 @@ export interface ApiResponse<T> {
   headers: Headers
 }
 
-export async function apiClient<T>(path: string, options: ApiRequestInit = {}): Promise<ApiResponse<T>> {
+export async function apiClient<T>(
+  path: string,
+  options: ApiRequestInit = {},
+): Promise<ApiResponse<T>> {
   const url = buildUrl(path)
   const { body, headers: originalHeaders, timeout = DEFAULT_TIMEOUT_MS, ...rest } = options
   const headers = new Headers(originalHeaders as HeadersInit | undefined)
@@ -75,7 +78,10 @@ export async function apiClient<T>(path: string, options: ApiRequestInit = {}): 
   const init: RequestInit = {
     ...rest,
     credentials: 'include',
-    headers: originalHeaders !== undefined || headers.has('Content-Type') ? (headers as Headers) : undefined,
+    headers:
+      originalHeaders !== undefined || headers.has('Content-Type')
+        ? (headers as Headers)
+        : undefined,
   }
 
   if (isJsonBody(body)) {

@@ -28,7 +28,9 @@ const { data: members, isLoading } = useMembers(computed(() => props.projectID))
 const { data: me } = useMe()
 const { canAdmin: isAdmin } = useProjectPermissions(project)
 
-const memberUserIDs = computed(() => (members.value ?? []).map((member: ProjectMember) => member.userId))
+const memberUserIDs = computed(() =>
+  (members.value ?? []).map((member: ProjectMember) => member.userId),
+)
 const allUserIDs = computed(() => {
   const ids = [...memberUserIDs.value]
   if (project.value?.ownerId) ids.push(project.value.ownerId)
@@ -138,19 +140,12 @@ function confirmRemoval(): void {
 
 <template>
   <div class="flex flex-col gap-4">
-    <MemberAddCard
-      v-if="isAdmin"
-      :project-i-d="projectID"
-      :existing-member-ids="memberIDs"
-    />
+    <MemberAddCard v-if="isAdmin" :project-i-d="projectID" :existing-member-ids="memberIDs" />
 
     <LoadingState v-if="isLoading" message="Loading members…" />
 
     <div v-else class="flex flex-col gap-3">
-      <div
-        v-for="member in displayedMembers"
-        :key="member.userId"
-      >
+      <div v-for="member in displayedMembers" :key="member.userId">
         <div class="flex items-start justify-between gap-3 py-2">
           <div class="min-w-0 flex-1">
             <UserDisplay v-if="usersByID?.[member.userId]" :user="usersByID[member.userId]!" />
@@ -162,22 +157,21 @@ function confirmRemoval(): void {
 
           <div class="flex flex-col items-end gap-2">
             <div class="flex flex-wrap items-center justify-end gap-2">
-              <Badge
-                :variant="member.role === 'admin' ? 'default' : 'secondary'"
-                class="text-xs"
-              >
+              <Badge :variant="member.role === 'admin' ? 'default' : 'secondary'" class="text-xs">
                 {{ ROLE_LABELS[member.role] }}
               </Badge>
-              <Badge v-if="member.userId === project?.ownerId" variant="outline" class="text-xs">Owner</Badge>
-              <span
-                v-if="member.userId === me?.id"
-                class="text-xs text-muted-foreground"
+              <Badge v-if="member.userId === project?.ownerId" variant="outline" class="text-xs"
+                >Owner</Badge
               >
+              <span v-if="member.userId === me?.id" class="text-xs text-muted-foreground">
                 (you)
               </span>
             </div>
 
-            <div v-if="canManageMember(member)" class="flex flex-wrap items-center justify-end gap-2">
+            <div
+              v-if="canManageMember(member)"
+              class="flex flex-wrap items-center justify-end gap-2"
+            >
               <NativeSelect
                 v-model="editedRoles[member.userId]"
                 size="sm"
@@ -214,10 +208,7 @@ function confirmRemoval(): void {
         <Separator />
       </div>
 
-      <EmptyState
-        v-if="displayedMembers.length === 0"
-        message="No members found."
-      />
+      <EmptyState v-if="displayedMembers.length === 0" message="No members found." />
     </div>
 
     <ConfirmDialog
@@ -225,12 +216,17 @@ function confirmRemoval(): void {
       title="Change collaborator role?"
       confirm-label="Confirm"
       :is-pending="updateMemberMutation.isPending.value"
-      @update:open="(value: boolean) => { if (!value) closeRoleChangeDialog() }"
+      @update:open="
+        (value: boolean) => {
+          if (!value) closeRoleChangeDialog()
+        }
+      "
       @confirm="confirmRoleChange"
     >
       <template #description v-if="pendingRoleChange">
         Change <strong>{{ memberName(pendingRoleChange.member.userId) }}</strong> to
-        <strong>{{ ROLE_LABELS[pendingRoleChange.role] }}</strong>?
+        <strong>{{ ROLE_LABELS[pendingRoleChange.role] }}</strong
+        >?
       </template>
     </ConfirmDialog>
 
@@ -239,12 +235,16 @@ function confirmRemoval(): void {
       title="Remove collaborator?"
       confirm-label="Remove"
       :is-pending="removeMemberMutation.isPending.value"
-      @update:open="(value: boolean) => { if (!value) pendingRemoval = null }"
+      @update:open="
+        (value: boolean) => {
+          if (!value) pendingRemoval = null
+        }
+      "
       @confirm="confirmRemoval"
     >
       <template #description v-if="pendingRemoval">
-        Remove <strong>{{ memberName(pendingRemoval.userId) }}</strong> from this project?
-        Any tasks assigned to them will be reassigned to the project owner.
+        Remove <strong>{{ memberName(pendingRemoval.userId) }}</strong> from this project? Any tasks
+        assigned to them will be reassigned to the project owner.
       </template>
     </ConfirmDialog>
   </div>

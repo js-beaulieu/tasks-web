@@ -12,7 +12,10 @@ const { toast } = await import('vue-sonner')
 
 describe('showErrorToast', () => {
   it('shows ApiError detail as description', () => {
-    showErrorToast('Failed', new ApiError({ type: '', title: 'Bad Request', status: 400, detail: 'Name is required' }))
+    showErrorToast(
+      'Failed',
+      new ApiError({ type: '', title: 'Bad Request', status: 400, detail: 'Name is required' }),
+    )
 
     expect(toast.error).toHaveBeenCalledWith('Failed', { description: 'Name is required' })
   })

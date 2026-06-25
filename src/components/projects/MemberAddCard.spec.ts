@@ -2,12 +2,13 @@ import { computed, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const addMutate = vi.fn<
-  (
-    input: { projectID: string; input: { userId: string; role: 'read' | 'modify' | 'admin' } },
-    opts?: { onSuccess?: () => void },
-  ) => void
->()
+const addMutate =
+  vi.fn<
+    (
+      input: { projectID: string; input: { userId: string; role: 'read' | 'modify' | 'admin' } },
+      opts?: { onSuccess?: () => void },
+    ) => void
+  >()
 
 const addPending = ref(false)
 const searchResults = ref([
@@ -26,7 +27,10 @@ vi.mock('@/composables/members/useUserSearch', () => ({
 }))
 
 vi.mock('@/composables/_ui/useDebouncedValue', () => ({
-  useDebouncedValue: (source: ReturnType<typeof computed>) => ({ debounced: source, isDebouncing: ref(false) }),
+  useDebouncedValue: (source: ReturnType<typeof computed>) => ({
+    debounced: source,
+    isDebouncing: ref(false),
+  }),
 }))
 
 import MemberAddCard from './MemberAddCard.vue'

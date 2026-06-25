@@ -42,7 +42,12 @@ function submitTag() {
   }
   addMutation.mutate(
     { taskID: props.taskID, tag: normalized },
-    { onSuccess: () => { newTag.value = ''; inputEl.value?.focus() } },
+    {
+      onSuccess: () => {
+        newTag.value = ''
+        inputEl.value?.focus()
+      },
+    },
   )
 }
 
@@ -66,12 +71,7 @@ function onKeydown(e: KeyboardEvent) {
     </div>
 
     <div v-if="(tags?.length ?? 0) > 0" class="flex flex-wrap gap-1.5">
-      <Badge
-        v-for="tag in tags"
-        :key="tag"
-        variant="secondary"
-        class="gap-1 text-xs"
-      >
+      <Badge v-for="tag in tags" :key="tag" variant="secondary" class="gap-1 text-xs">
         {{ tag }}
         <button
           v-if="canModify"
@@ -86,12 +86,7 @@ function onKeydown(e: KeyboardEvent) {
       </Badge>
     </div>
 
-    <p
-      v-else
-      class="text-xs text-muted-foreground"
-    >
-      No tags yet.
-    </p>
+    <p v-else class="text-xs text-muted-foreground">No tags yet.</p>
 
     <div v-if="canModify" class="flex items-center gap-1">
       <Input

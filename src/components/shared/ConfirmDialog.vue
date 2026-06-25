@@ -36,11 +36,7 @@ const emit = defineEmits<{
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel :disabled="isPending">Cancel</AlertDialogCancel>
-        <Button
-          variant="destructive"
-          :disabled="isPending"
-          @click="emit('confirm')"
-        >
+        <Button variant="destructive" :disabled="isPending" @click="emit('confirm')">
           <Loader2 v-if="isPending" class="size-4 animate-spin" />
           {{ confirmLabel ?? 'Confirm' }}
         </Button>

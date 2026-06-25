@@ -39,7 +39,8 @@ export function useAccessError(
 
     return {
       title: `Could not load ${noun}`,
-      message: err instanceof Error ? err.message : `Something went wrong while loading this ${noun}.`,
+      message:
+        err instanceof Error ? err.message : `Something went wrong while loading this ${noun}.`,
     }
   })
 }

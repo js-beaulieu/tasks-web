@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { makeApiTask } from '@/test/mocks/fixtures'
-import {
-  getLastRequest,
-  seedMockData,
-  setUpdateNextOccurrenceId,
-} from '@/test/mocks/state'
+import { getLastRequest, seedMockData, setUpdateNextOccurrenceId } from '@/test/mocks/state'
 import {
   listProjectTasks,
   getTask,

@@ -25,9 +25,12 @@ export function useColorMode() {
     store.toggleTheme()
   }
 
-  watch(() => store.theme, (newMode) => {
-    apply(newMode)
-  })
+  watch(
+    () => store.theme,
+    (newMode) => {
+      apply(newMode)
+    },
+  )
 
   onMounted(() => {
     apply(store.theme)

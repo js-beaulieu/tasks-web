@@ -121,7 +121,10 @@ export async function createTask(projectID: string, input: CreateTaskInput): Pro
   return fromApiTask(data)
 }
 
-export async function updateTask(taskID: string, input: UpdateTaskInput): Promise<UpdateTaskResult> {
+export async function updateTask(
+  taskID: string,
+  input: UpdateTaskInput,
+): Promise<UpdateTaskResult> {
   const { data, headers } = await apiClient<ApiTask>(apiPath('tasks', taskID), {
     method: 'PATCH',
     body: toApiUpdateBody(input),
@@ -142,10 +145,7 @@ export async function listSubtasks(taskID: string): Promise<Task[]> {
   return tasks.map(fromApiTask)
 }
 
-export async function createSubtask(
-  parentTaskID: string,
-  input: CreateTaskInput,
-): Promise<Task> {
+export async function createSubtask(parentTaskID: string, input: CreateTaskInput): Promise<Task> {
   const body = toApiCreateBody(input) as ApiCreateSubtaskBody
   const { data } = await apiClient<ApiTask>(apiPath('tasks', parentTaskID, 'tasks'), {
     method: 'POST',

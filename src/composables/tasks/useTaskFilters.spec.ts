@@ -51,22 +51,29 @@ describe('useTaskFilters', () => {
   })
 
   it('hasActiveFilters is true when tags are selected', async () => {
-    const { selectedTags, hasActiveFilters } = useTaskFilters(ref([]), ref({}), ref('position'), ref(true))
+    const { selectedTags, hasActiveFilters } = useTaskFilters(
+      ref([]),
+      ref({}),
+      ref('position'),
+      ref(true),
+    )
     selectedTags.value = ['urgent']
     await nextTick()
     expect(hasActiveFilters.value).toBe(true)
   })
 
   it('filters tasks by selected tags (AND filter)', () => {
-    const tasks = ref([
-      makeTask({ id: 't1' }),
-      makeTask({ id: 't2' }),
-    ])
+    const tasks = ref([makeTask({ id: 't1' }), makeTask({ id: 't2' })])
     const tagsByTask = ref<Record<string, string[]>>({
       t1: ['urgent', 'backend'],
       t2: ['backend'],
     })
-    const { selectedTags, filteredTasks } = useTaskFilters(tasks, tagsByTask, ref('position'), ref(true))
+    const { selectedTags, filteredTasks } = useTaskFilters(
+      tasks,
+      tagsByTask,
+      ref('position'),
+      ref(true),
+    )
 
     selectedTags.value = ['urgent']
     expect(filteredTasks.value).toHaveLength(1)
@@ -79,7 +86,12 @@ describe('useTaskFilters', () => {
       t1: ['urgent', 'backend'],
       t2: ['backend'],
     })
-    const { selectedTags, filteredTasks } = useTaskFilters(tasks, tagsByTask, ref('position'), ref(true))
+    const { selectedTags, filteredTasks } = useTaskFilters(
+      tasks,
+      tagsByTask,
+      ref('position'),
+      ref(true),
+    )
 
     selectedTags.value = ['urgent', 'backend']
     expect(filteredTasks.value).toHaveLength(1)
@@ -87,10 +99,7 @@ describe('useTaskFilters', () => {
   })
 
   it('returns tasks in original order when manual sort', () => {
-    const tasks = ref([
-      makeTask({ id: 't2', position: 1 }),
-      makeTask({ id: 't1', position: 0 }),
-    ])
+    const tasks = ref([makeTask({ id: 't2', position: 1 }), makeTask({ id: 't1', position: 0 })])
     const { sortedTasks } = useTaskFilters(tasks, ref({}), ref('position'), ref(true))
 
     expect(sortedTasks.value[0]!.id).toBe('t2')
@@ -121,7 +130,12 @@ describe('useTaskFilters', () => {
 
   it('handles undefined tasks gracefully', () => {
     const tasks = ref<Task[] | undefined>(undefined)
-    const { filteredTasks, sortedTasks } = useTaskFilters(tasks, ref({}), ref('position'), ref(true))
+    const { filteredTasks, sortedTasks } = useTaskFilters(
+      tasks,
+      ref({}),
+      ref('position'),
+      ref(true),
+    )
 
     expect(filteredTasks.value).toEqual([])
     expect(sortedTasks.value).toEqual([])

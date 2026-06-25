@@ -31,39 +31,36 @@ async function handleFormSubmit(input: CreateProjectInput) {
   if (!project.value) return
   await updateMutation.mutateAsync(
     { projectID: project.value.id, input },
-    { onSuccess: () => { formOpen.value = false } },
+    {
+      onSuccess: () => {
+        formOpen.value = false
+      },
+    },
   )
 }
 
 function handleDeleteConfirm() {
   if (!project.value) return
   deleteMutation.mutate(project.value.id, {
-    onSuccess: () => { deleteOpen.value = false },
+    onSuccess: () => {
+      deleteOpen.value = false
+    },
   })
 }
 </script>
 
 <template>
-  <div
-    v-if="project"
-    class="flex flex-col gap-6"
-  >
+  <div v-if="project" class="flex flex-col gap-6">
     <div class="flex flex-col gap-4">
       <div class="flex flex-col gap-1">
         <span class="text-xs font-medium text-muted-foreground">Name</span>
         <span class="text-sm">{{ project.name }}</span>
       </div>
-      <div
-        v-if="project.description"
-        class="flex flex-col gap-1"
-      >
+      <div v-if="project.description" class="flex flex-col gap-1">
         <span class="text-xs font-medium text-muted-foreground">Description</span>
         <span class="whitespace-pre-wrap text-sm">{{ project.description }}</span>
       </div>
-      <div
-        v-if="project.dueDate"
-        class="flex flex-col gap-1"
-      >
+      <div v-if="project.dueDate" class="flex flex-col gap-1">
         <span class="text-xs font-medium text-muted-foreground">Due date</span>
         <span class="text-sm">{{ formatDate(project.dueDate) }}</span>
       </div>
@@ -79,12 +76,7 @@ function handleDeleteConfirm() {
     <Separator />
 
     <div class="flex items-center gap-2">
-      <Button
-        v-if="canModify"
-        variant="outline"
-        size="sm"
-        @click="formOpen = true"
-      >
+      <Button v-if="canModify" variant="outline" size="sm" @click="formOpen = true">
         <Pencil data-icon="inline-start" />
         Edit project
       </Button>
@@ -102,10 +94,7 @@ function handleDeleteConfirm() {
 
     <Separator />
 
-    <StatusManagementSection
-      :project-i-d="projectID"
-      :can-admin="isProjectAdmin"
-    />
+    <StatusManagementSection :project-i-d="projectID" :can-admin="isProjectAdmin" />
 
     <ProjectFormDialog
       v-model:open="formOpen"

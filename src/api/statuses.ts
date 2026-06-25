@@ -16,13 +16,14 @@ function fromApiProjectStatus(s: ApiProjectStatus): ProjectStatus {
 }
 
 export async function listProjectStatuses(projectID: string): Promise<ProjectStatus[]> {
-  const statuses = await apiList<ApiProjectStatus>(
-    apiPath('projects', projectID, 'statuses'),
-  )
+  const statuses = await apiList<ApiProjectStatus>(apiPath('projects', projectID, 'statuses'))
   return statuses.map(fromApiProjectStatus)
 }
 
-export async function createProjectStatus(projectID: string, status: string): Promise<ProjectStatus> {
+export async function createProjectStatus(
+  projectID: string,
+  status: string,
+): Promise<ProjectStatus> {
   const { data: created } = await apiClient<ApiProjectStatus>(
     apiPath('projects', projectID, 'statuses'),
     {
@@ -34,8 +35,5 @@ export async function createProjectStatus(projectID: string, status: string): Pr
 }
 
 export async function deleteProjectStatus(projectID: string, status: string): Promise<void> {
-  await apiClient<void>(
-    apiPath('projects', projectID, 'statuses', status),
-    { method: 'DELETE' },
-  )
+  await apiClient<void>(apiPath('projects', projectID, 'statuses', status), { method: 'DELETE' })
 }

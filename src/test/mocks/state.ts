@@ -1,16 +1,5 @@
-import type {
-  ApiProject,
-  ApiProjectMember,
-  ApiProjectStatus,
-  ApiTask,
-  ApiUser,
-} from '@/api/types'
-import {
-  makeApiProject,
-  makeApiProjectMember,
-  makeApiProjectStatus,
-  makeApiUser,
-} from './fixtures'
+import type { ApiProject, ApiProjectMember, ApiProjectStatus, ApiTask, ApiUser } from '@/api/types'
+import { makeApiProject, makeApiProjectMember, makeApiProjectStatus, makeApiUser } from './fixtures'
 
 export interface MockRequestLogEntry {
   method: string
@@ -173,7 +162,10 @@ export function resetMockData(seed: MockSeed = {}): void {
     nextTaskID: seed.nextTaskID ?? base.nextTaskID,
     nextOccurrenceTasks: seed.nextOccurrenceTasks
       ? Object.fromEntries(
-          Object.entries(seed.nextOccurrenceTasks).map(([key, value]) => [key, value ? cloneTask(value) : null]),
+          Object.entries(seed.nextOccurrenceTasks).map(([key, value]) => [
+            key,
+            value ? cloneTask(value) : null,
+          ]),
         )
       : {},
   }
@@ -238,7 +230,10 @@ export async function captureRequest(request: Request): Promise<MockRequestLogEn
   return entry
 }
 
-export function listTasksByProject(projectID: string, filters?: { status?: string; assigneeID?: string; tag?: string }): ApiTask[] {
+export function listTasksByProject(
+  projectID: string,
+  filters?: { status?: string; assigneeID?: string; tag?: string },
+): ApiTask[] {
   return state.tasks
     .filter((task) => task.project_id === projectID)
     .filter((task) => task.parent_id === undefined)
@@ -263,10 +258,11 @@ export function listProjectStatuses(projectID: string): ApiProjectStatus[] {
     .map(cloneStatus)
 }
 
-export function addProjectStatus(projectID: string, status: string): { created: ApiProjectStatus; conflict: boolean } {
-  const existing = state.statuses.find(
-    (s) => s.project_id === projectID && s.status === status,
-  )
+export function addProjectStatus(
+  projectID: string,
+  status: string,
+): { created: ApiProjectStatus; conflict: boolean } {
+  const existing = state.statuses.find((s) => s.project_id === projectID && s.status === status)
   if (existing) {
     return { created: cloneStatus(existing), conflict: true }
   }
@@ -277,22 +273,23 @@ export function addProjectStatus(projectID: string, status: string): { created: 
   return { created: cloneStatus(created), conflict: false }
 }
 
-export function deleteProjectStatus(projectID: string, status: string): { notFound: boolean; conflict: boolean } {
-  const existing = state.statuses.find(
-    (s) => s.project_id === projectID && s.status === status,
-  )
+export function deleteProjectStatus(
+  projectID: string,
+  status: string,
+): { notFound: boolean; conflict: boolean } {
+  const existing = state.statuses.find((s) => s.project_id === projectID && s.status === status)
   if (!existing) {
     return { notFound: true, conflict: false }
   }
 
-  const inUse = state.tasks.some(
-    (task) => task.project_id === projectID && task.status === status,
-  )
+  const inUse = state.tasks.some((task) => task.project_id === projectID && task.status === status)
   if (inUse) {
     return { notFound: false, conflict: true }
   }
 
-  state.statuses = state.statuses.filter((s) => !(s.project_id === projectID && s.status === status))
+  state.statuses = state.statuses.filter(
+    (s) => !(s.project_id === projectID && s.status === status),
+  )
   return { notFound: false, conflict: false }
 }
 
@@ -311,7 +308,11 @@ export function listProjectMembers(projectID: string): ApiProjectMember[] {
   ]
 }
 
-export function addProjectMember(projectID: string, userID: string, role: ApiProjectMember['role']): ApiProjectMember {
+export function addProjectMember(
+  projectID: string,
+  userID: string,
+  role: ApiProjectMember['role'],
+): ApiProjectMember {
   const existing = state.members.find(
     (member) => member.project_id === projectID && member.user_id === userID,
   )
@@ -326,7 +327,11 @@ export function addProjectMember(projectID: string, userID: string, role: ApiPro
   return cloneMember(member)
 }
 
-export function updateProjectMember(projectID: string, userID: string, role: ApiProjectMember['role']): ApiProjectMember | undefined {
+export function updateProjectMember(
+  projectID: string,
+  userID: string,
+  role: ApiProjectMember['role'],
+): ApiProjectMember | undefined {
   const project = state.projects.find((entry) => entry.id === projectID)
   if (!project) {
     return undefined
@@ -347,7 +352,10 @@ export function updateProjectMember(projectID: string, userID: string, role: Api
   return cloneMember(member)
 }
 
-export function removeProjectMember(projectID: string, userID: string): { reassigned: number } | undefined {
+export function removeProjectMember(
+  projectID: string,
+  userID: string,
+): { reassigned: number } | undefined {
   const project = state.projects.find((entry) => entry.id === projectID)
   if (!project || project.owner_id === userID) {
     return undefined
@@ -404,18 +412,13 @@ function nextTimestamp(previous?: string): string {
 function getNextPosition(projectID: string, parentID: string | undefined, status: string): number {
   const siblings = state.tasks.filter(
     (task) =>
-      task.project_id === projectID &&
-      task.status === status &&
-      task.parent_id === parentID,
+      task.project_id === projectID && task.status === status && task.parent_id === parentID,
   )
   return siblings.length
 }
 
 function getFirstProjectStatus(projectID: string): string {
-  return (
-    listProjectStatuses(projectID)[0]?.status ??
-    'todo'
-  )
+  return listProjectStatuses(projectID)[0]?.status ?? 'todo'
 }
 
 export function createProject(input: Partial<ApiProject> & Pick<ApiProject, 'name'>): ApiProject {
@@ -441,7 +444,10 @@ export function createProject(input: Partial<ApiProject> & Pick<ApiProject, 'nam
   return cloneProject(project)
 }
 
-export function updateProject(projectID: string, patch: Partial<ApiProject>): ApiProject | undefined {
+export function updateProject(
+  projectID: string,
+  patch: Partial<ApiProject>,
+): ApiProject | undefined {
   const project = state.projects.find((entry) => entry.id === projectID)
   if (!project) {
     return undefined
@@ -493,7 +499,10 @@ export function createTask(
   return cloneTask(task)
 }
 
-export function updateTask(taskID: string, patch: Partial<ApiTask>): { task: ApiTask; nextOccurrenceId: string | null } | undefined {
+export function updateTask(
+  taskID: string,
+  patch: Partial<ApiTask>,
+): { task: ApiTask; nextOccurrenceId: string | null } | undefined {
   const task = state.tasks.find((entry) => entry.id === taskID)
   if (!task) {
     return undefined
@@ -563,7 +572,13 @@ export function updateTask(taskID: string, patch: Partial<ApiTask>): { task: Api
   const updated = cloneTask(task)
 
   let nextOccurrenceId: string | null = null
-  if (patch.status !== undefined && patch.status !== previousStatus && patch.status === 'done' && task.recurrence && task.due_date) {
+  if (
+    patch.status !== undefined &&
+    patch.status !== previousStatus &&
+    patch.status === 'done' &&
+    task.recurrence &&
+    task.due_date
+  ) {
     const nextOccurrenceTask = state.nextOccurrenceTasks[taskID] ?? null
     if (nextOccurrenceTask) {
       state.tasks.push(cloneTask(nextOccurrenceTask))
@@ -576,9 +591,7 @@ export function updateTask(taskID: string, patch: Partial<ApiTask>): { task: Api
 }
 
 export function deleteTask(taskID: string): boolean {
-  const childIDs = state.tasks
-    .filter((task) => task.parent_id === taskID)
-    .map((task) => task.id)
+  const childIDs = state.tasks.filter((task) => task.parent_id === taskID).map((task) => task.id)
 
   for (const childID of childIDs) {
     deleteTask(childID)
@@ -595,7 +608,10 @@ export function deleteTask(taskID: string): boolean {
   return true
 }
 
-export function setUpdateNextOccurrenceId(taskID: string, nextOccurrenceTask: ApiTask | null): void {
+export function setUpdateNextOccurrenceId(
+  taskID: string,
+  nextOccurrenceTask: ApiTask | null,
+): void {
   state.nextOccurrenceTasks[taskID] = nextOccurrenceTask ? cloneTask(nextOccurrenceTask) : null
 }
 
@@ -617,15 +633,11 @@ export function getUser(userID: string): ApiUser | undefined {
 export function searchUsers(search: string, limit: number): ApiUser[] {
   const normalizedQuery = search.trim().toLowerCase()
   return state.users
-    .filter((user) =>
-      `${user.name} ${user.email}`.toLowerCase().includes(normalizedQuery),
-    )
+    .filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(normalizedQuery))
     .slice(0, limit)
     .map(cloneUser)
 }
 
 export function listUsersByIDs(ids: string[]): ApiUser[] {
-  return state.users
-    .filter((user) => ids.includes(user.id))
-    .map(cloneUser)
+  return state.users.filter((user) => ids.includes(user.id)).map(cloneUser)
 }

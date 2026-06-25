@@ -5,10 +5,7 @@ import { getMe, getUsersByIDs, searchUsers, type User } from './users'
 
 beforeEach(() => {
   seedMockData({
-    users: [
-      makeApiUser(),
-      makeApiUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' }),
-    ],
+    users: [makeApiUser(), makeApiUser({ id: 'u2', name: 'Bob', email: 'bob@example.com' })],
   })
 })
 

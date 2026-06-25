@@ -31,10 +31,7 @@ const accessError = useAccessError(isError, error, 'account')
       </div>
 
       <div class="flex items-center gap-2">
-        <div
-          v-if="me"
-          class="hidden text-right leading-none sm:block"
-        >
+        <div v-if="me" class="hidden text-right leading-none sm:block">
           <div class="text-sm font-medium">
             {{ me.name }}
           </div>
@@ -57,11 +54,7 @@ const accessError = useAccessError(isError, error, 'account')
     <main class="flex-1 p-4">
       <LoadingState v-if="isLoading" message="Loading your account…" />
 
-      <ErrorAlert
-        v-else-if="accessError"
-        :title="accessError.title"
-        :message="accessError.message"
-      >
+      <ErrorAlert v-else-if="accessError" :title="accessError.title" :message="accessError.message">
         <template #actions>
           <div class="mt-4 flex gap-2">
             <Button type="button" @click="refetch()"> Retry </Button>

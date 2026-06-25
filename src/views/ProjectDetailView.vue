@@ -62,16 +62,9 @@ const accessError = useAccessError(isError, error, 'project')
 
     <LoadingState v-if="isLoading" message="Loading project…" />
 
-    <ErrorAlert
-      v-else-if="accessError"
-      :title="accessError.title"
-      :message="accessError.message"
-    />
+    <ErrorAlert v-else-if="accessError" :title="accessError.title" :message="accessError.message" />
 
-    <div
-      v-else-if="project"
-      class="flex flex-col gap-4"
-    >
+    <div v-else-if="project" class="flex flex-col gap-4">
       <div class="flex flex-col gap-1">
         <h1 class="text-xl font-semibold">{{ project.name }}</h1>
         <div class="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
