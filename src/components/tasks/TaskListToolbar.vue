@@ -42,7 +42,7 @@ const emit = defineEmits<{
           <Button
             variant="outline"
             size="sm"
-            class="h-7 px-2 text-xs gap-1"
+            class="h-8 px-2 text-xs gap-1"
             :class="hasActiveFilters ? 'border-primary' : ''"
           >
             <Filter class="h-3.5 w-3.5" />
@@ -97,7 +97,7 @@ const emit = defineEmits<{
       </Popover>
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
-          <Button variant="outline" size="sm" class="h-7 px-2 text-xs gap-1">
+          <Button variant="outline" size="sm" class="h-8 px-2 text-xs gap-1">
             <ArrowUpDown class="h-3.5 w-3.5" />
             {{ sortLabel }}
           </Button>
@@ -121,7 +121,7 @@ const emit = defineEmits<{
         :model-value="view"
         @update:model-value="(v) => { if (v) emit('update:view', v as TaskViewMode) }"
       >
-        <TabsList class="!h-7">
+        <TabsList>
           <TabsTrigger value="vertical">
             <List class="size-3.5" />
             List
