@@ -1,22 +1,11 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { groupBy, uniq, orderBy } from 'es-toolkit'
-import { LayoutGrid, List, ArrowUpDown, Filter } from '@lucide/vue'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Checkbox } from '@/components/ui/checkbox'
+import { uniq } from 'es-toolkit'
 import TaskGroup from '@/components/tasks/TaskGroup.vue'
 import BoardView from '@/components/tasks/BoardView.vue'
 import TaskDeleteDialog from '@/components/tasks/TaskDeleteDialog.vue'
+import TaskListToolbar from '@/components/tasks/TaskListToolbar.vue'
 import { useProject } from '@/composables/projects/useProject'
 import { useStatuses } from '@/composables/statuses/useStatuses'
 import { useTasks } from '@/composables/tasks/useTasks'
@@ -24,18 +13,16 @@ import { useMembers } from '@/composables/members/useMembers'
 import { useMe } from '@/composables/users/useMe'
 import { useUsersByID } from '@/composables/users/useUsersByID'
 import { useProjectPermissions } from '@/composables/projects/useProjectPermissions'
-import { useCreateTask } from '@/composables/tasks/useCreateTask'
-import { useUpdateTask } from '@/composables/tasks/useUpdateTask'
 import { useTaskViewPreference } from '@/composables/_ui/useTaskViewPreference'
 import { useTaskSort } from '@/composables/_ui/useTaskSort'
 import { useTaskCardMetadata } from '@/composables/tasks/useTaskCardMetadata'
 import { useAccessError } from '@/composables/useAccessError'
+import { useTaskFilters } from '@/composables/tasks/useTaskFilters'
+import { useTaskGroups } from '@/composables/tasks/useTaskGroups'
+import { useTaskActions } from '@/composables/tasks/useTaskActions'
 import LoadingState from '@/components/shared/LoadingState.vue'
 import ErrorAlert from '@/components/shared/ErrorAlert.vue'
 import EmptyState from '@/components/shared/EmptyState.vue'
-import { isOverdue } from '@/lib/date'
-import type { Task } from '@/api/tasks'
-import type { ProjectStatus } from '@/api/statuses'
 
 const props = defineProps<{
   projectID: string
@@ -69,7 +56,28 @@ const { canModify } = useProjectPermissions(project)
 
 const { view } = useTaskViewPreference()
 const { sortMode, isManualOrder } = useTaskSort()
-const dragResetKey = ref(0)
+
+const { selectedTags, availableTags, hasActiveFilters, filteredTasks } = useTaskFilters(
+  tasks,
+  tagsByTask,
+  sortMode,
+  isManualOrder,
+)
+
+const { groupedTasks, doneStatus, firstStatus } = useTaskGroups(filteredTasks, statuses)
+
+const {
+  isAdding,
+  dragResetKey,
+  deleteTaskID,
+  deleteTaskObj,
+  handleQuickAdd,
+  handleCompleteTask,
+  handleUncompleteTask,
+  handleMoveStatus,
+  handleReorder,
+  handleDeleteTask,
+} = useTaskActions(computed(() => props.projectID), tasks, me, doneStatus, firstStatus)
 
 const collapsedStatuses = reactive<Record<string, boolean>>({
   done: true,
@@ -80,98 +88,6 @@ function toggleCollapse(status: string) {
   collapsedStatuses[status] = !collapsedStatuses[status]
 }
 
-const sortedTasks = computed(() => {
-  const allTasks = tasks.value ?? []
-  if (isManualOrder.value) return allTasks
-
-  const terminalStatuses = new Set(['done', 'cancelled'])
-
-  return orderBy(
-    allTasks,
-    [
-      (t: Task) => {
-        if (sortMode.value === 'dueDate') {
-          if (t.dueDate && isOverdue(t.dueDate)) return 0
-          if (t.dueDate) return 1
-          return 2
-        }
-        return 0
-      },
-      (t: Task) => {
-        if (sortMode.value === 'dueDate') {
-          if (terminalStatuses.has(t.status)) return t.updatedAt
-          return t.dueDate ?? ''
-        }
-        return 0
-      },
-    ],
-    ['asc', 'asc'],
-  )
-})
-
-const selectedTags = ref<string[]>([])
-
-const availableTags = computed(() => {
-  const tagSet = new Set<string>()
-  for (const tags of Object.values(tagsByTask.value)) {
-    for (const tag of tags) tagSet.add(tag)
-  }
-  return [...tagSet].sort()
-})
-
-const hasActiveFilters = computed(() => selectedTags.value.length > 0)
-
-const filteredTasks = computed(() => {
-  const all = sortedTasks.value
-  if (selectedTags.value.length === 0) return all
-  return all.filter((t) => {
-    const tags = tagsByTask.value[t.id] ?? []
-    return selectedTags.value.every((st) => tags.includes(st))
-  })
-})
-
-const groupedTasks = computed(() => {
-  const statusOrder: string[] = (statuses.value ?? []).map((s: ProjectStatus) => s.status)
-  const defaultStatuses = ['todo', 'in_progress', 'done']
-  const allStatuses = uniq([...statusOrder, ...defaultStatuses])
-
-  const grouped = groupBy(filteredTasks.value, (t) => t.status)
-
-  return allStatuses
-    .filter((s) => statusOrder.includes(s) || (grouped[s]?.length ?? 0) > 0)
-    .map((status) => ({
-      status,
-      tasks: grouped[status] ?? [],
-    }))
-})
-
-const doneStatus = computed(() => {
-  const statusList = statuses.value ?? []
-  const done = statusList.find((s) => s.status === 'done')
-  return done ? done.status : 'done'
-})
-
-const firstStatus = computed(() => {
-  const statusList = statuses.value ?? []
-  if (statusList.length > 0) return statusList[0]!.status
-  return 'todo'
-})
-
-const createMutation = useCreateTask()
-const isAdding = computed(() => createMutation.isPending.value)
-const updateMutation = useUpdateTask()
-
-function handleQuickAdd(status: string, name: string) {
-  createMutation.mutate({
-    projectID: props.projectID,
-    input: {
-      name,
-      status,
-      assigneeId: me.value?.id,
-    },
-  })
-}
-
 function openTask(taskID: string) {
   router.push({
     name: 'task-detail',
@@ -179,67 +95,9 @@ function openTask(taskID: string) {
   })
 }
 
-function handleCompleteTask(taskID: string) {
-  updateMutation.mutate(
-    {
-      taskID,
-      input: { status: doneStatus.value },
-    },
-    {
-      onError: () => {
-        dragResetKey.value++
-      },
-    },
-  )
-}
-
-function handleUncompleteTask(taskID: string) {
-  updateMutation.mutate({
-    taskID,
-    input: { status: firstStatus.value },
-  })
-}
-
-function handleMoveStatus(taskID: string, status: string) {
-  updateMutation.mutate(
-    { taskID, input: { status } },
-    {
-      onError: () => {
-        dragResetKey.value++
-      },
-    },
-  )
-}
-
-function handleReorder(taskID: string, newIndex: number, newStatus?: string) {
-  const input: { position: number; status?: string } = { position: newIndex }
-  if (newStatus) input.status = newStatus
-  updateMutation.mutate(
-    { taskID, input },
-    {
-      onError: () => {
-        dragResetKey.value++
-      },
-    },
-  )
-}
-
-const deleteTaskID = ref<string | null>(null)
-const deleteTaskObj = computed<Task | null>(() => {
-  if (!deleteTaskID.value) return null
-  return (tasks.value ?? []).find((t) => t.id === deleteTaskID.value) ?? null
-})
-
-function handleDeleteTask(taskID: string) {
-  deleteTaskID.value = taskID
-}
-
 const accessError = useAccessError(isError, error, 'project')
 
-const sortLabel = computed(() => {
-  if (sortMode.value === 'dueDate') return 'Due date'
-  return 'Manual'
-})
+const sortLabel = computed(() => sortMode.value === 'dueDate' ? 'Due date' : 'Manual')
 </script>
 
 <template>
@@ -256,110 +114,18 @@ const sortLabel = computed(() => {
       v-else
       class="flex flex-col gap-4"
     >
-      <div class="flex items-center justify-between">
-        <div class="text-sm text-muted-foreground">
-          {{ filteredTasks.length }} task{{ filteredTasks.length !== 1 ? 's' : '' }}
-          <span v-if="hasActiveFilters" class="text-xs"> (filtered)</span>
-        </div>
-        <div class="flex items-center gap-1">
-          <Popover>
-            <PopoverTrigger as-child>
-              <Button
-                variant="outline"
-                size="sm"
-                class="h-7 px-2 text-xs gap-1"
-                :class="hasActiveFilters ? 'border-primary' : ''"
-              >
-                <Filter class="h-3.5 w-3.5" />
-                Filter
-                <Badge
-                  v-if="hasActiveFilters"
-                  variant="secondary"
-                  class="ml-0.5 text-[10px] leading-none"
-                >
-                  {{ selectedTags.length }}
-                </Badge>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" class="w-56">
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium">Filter by tags</span>
-                  <Button
-                    v-if="hasActiveFilters"
-                    variant="ghost"
-                    size="sm"
-                    class="h-6 text-xs"
-                    @click="selectedTags = []"
-                  >
-                    Clear
-                  </Button>
-                </div>
-                <div
-                  v-if="availableTags.length === 0"
-                  class="py-2 text-center text-xs text-muted-foreground"
-                >
-                  No tags available
-                </div>
-                <div v-else class="flex flex-col gap-1">
-                  <label
-                    v-for="tag in availableTags"
-                    :key="tag"
-                    class="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 text-sm hover:bg-accent"
-                  >
-                    <Checkbox
-                      :model-value="selectedTags.includes(tag)"
-                      @update:model-value="(v: boolean | 'indeterminate') => {
-                        if (v === true) selectedTags = [...selectedTags, tag]
-                        else selectedTags = selectedTags.filter((t) => t !== tag)
-                      }"
-                    />
-                    {{ tag }}
-                  </label>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" size="sm" class="h-7 px-2 text-xs gap-1">
-                <ArrowUpDown class="h-3.5 w-3.5" />
-                {{ sortLabel }}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                :class="sortMode === 'position' ? 'bg-accent' : ''"
-                @click="sortMode = 'position'"
-              >
-                Manual order
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                :class="sortMode === 'dueDate' ? 'bg-accent' : ''"
-                @click="sortMode = 'dueDate'"
-              >
-                Due date
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <ToggleGroup
-            type="single"
-            :model-value="view"
-            variant="outline"
-            size="sm"
-            @update:model-value="(v) => { if (v) view = v as 'board' | 'vertical' }"
-          >
-            <ToggleGroupItem value="vertical" class="text-xs">
-              <List class="mr-1 h-3.5 w-3.5" />
-              List
-            </ToggleGroupItem>
-            <ToggleGroupItem value="board" class="text-xs">
-              <LayoutGrid class="mr-1 h-3.5 w-3.5" />
-              Board
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
-      </div>
+      <TaskListToolbar
+        :filtered-count="filteredTasks.length"
+        :has-active-filters="hasActiveFilters"
+        :selected-tags="selectedTags"
+        :available-tags="availableTags"
+        :sort-mode="sortMode"
+        :sort-label="sortLabel"
+        :view="view"
+        @update:selected-tags="selectedTags = $event"
+        @update:sort-mode="sortMode = $event"
+        @update:view="view = $event"
+      />
 
       <div v-if="view === 'board'">
         <BoardView
