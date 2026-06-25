@@ -1,4 +1,4 @@
-import { apiClient, apiList } from './client'
+import { apiClient, apiList, apiPath } from './client'
 import type { ApiProjectStatus } from './types'
 
 export interface ProjectStatus {
@@ -17,14 +17,14 @@ function fromApiProjectStatus(s: ApiProjectStatus): ProjectStatus {
 
 export async function listProjectStatuses(projectID: string): Promise<ProjectStatus[]> {
   const statuses = await apiList<ApiProjectStatus>(
-    `projects/${encodeURIComponent(projectID)}/statuses`,
+    apiPath('projects', projectID, 'statuses'),
   )
   return statuses.map(fromApiProjectStatus)
 }
 
 export async function createProjectStatus(projectID: string, status: string): Promise<ProjectStatus> {
   const { data: created } = await apiClient<ApiProjectStatus>(
-    `projects/${encodeURIComponent(projectID)}/statuses`,
+    apiPath('projects', projectID, 'statuses'),
     {
       method: 'POST',
       body: { status },
@@ -35,7 +35,7 @@ export async function createProjectStatus(projectID: string, status: string): Pr
 
 export async function deleteProjectStatus(projectID: string, status: string): Promise<void> {
   await apiClient<void>(
-    `projects/${encodeURIComponent(projectID)}/statuses/${encodeURIComponent(status)}`,
+    apiPath('projects', projectID, 'statuses', status),
     { method: 'DELETE' },
   )
 }

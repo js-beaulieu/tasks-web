@@ -1,4 +1,4 @@
-import { apiClient, apiList } from './client'
+import { apiClient, apiList, apiPath } from './client'
 import type { ApiProject, ApiCreateProjectBody, ApiUpdateProjectBody } from './types'
 
 export interface Project {
@@ -53,29 +53,29 @@ export async function listProjects(): Promise<Project[]> {
 }
 
 export async function getProject(projectID: string): Promise<Project> {
-  const { data: project } = await apiClient<ApiProject>(`projects/${encodeURIComponent(projectID)}`)
-  return fromApiProject(project)
+  const { data } = await apiClient<ApiProject>(apiPath('projects', projectID))
+  return fromApiProject(data)
 }
 
 export async function createProject(input: CreateProjectInput): Promise<Project> {
-  const { data: project } = await apiClient<ApiProject>('projects', {
+  const { data } = await apiClient<ApiProject>('projects', {
     method: 'POST',
     body: toApiCreateBody(input),
   })
-  return fromApiProject(project)
+  return fromApiProject(data)
 }
 
 export async function updateProject(
   projectID: string,
   input: UpdateProjectInput,
 ): Promise<Project> {
-  const { data: project } = await apiClient<ApiProject>(`projects/${encodeURIComponent(projectID)}`, {
+  const { data } = await apiClient<ApiProject>(apiPath('projects', projectID), {
     method: 'PATCH',
     body: toApiUpdateBody(input),
   })
-  return fromApiProject(project)
+  return fromApiProject(data)
 }
 
 export async function deleteProject(projectID: string): Promise<void> {
-  await apiClient<void>(`projects/${encodeURIComponent(projectID)}`, { method: 'DELETE' })
+  await apiClient<void>(apiPath('projects', projectID), { method: 'DELETE' })
 }

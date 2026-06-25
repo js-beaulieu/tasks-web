@@ -1,20 +1,15 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { createResourceMutation } from '@/lib/createResourceMutation'
 import { removeProjectMember } from '@/api/members'
-import { showErrorToast } from '@/lib/error'
 import { qk } from '@/lib/queryKeys'
 
 export function useRemoveProjectMember() {
-  const queryClient = useQueryClient()
-
-  return useMutation<{ reassigned: number }, Error, { projectID: string; userID: string }>({
+  return createResourceMutation<{ reassigned: number }, { projectID: string; userID: string }>({
     mutationFn: ({ projectID, userID }) => removeProjectMember(projectID, userID),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: qk.projectMembers(variables.projectID) })
-      queryClient.invalidateQueries({ queryKey: qk.projectTasks(variables.projectID) })
-      queryClient.invalidateQueries({ queryKey: qk.tasks() })
-    },
-    onError: (error) => {
-      showErrorToast('Could not remove collaborator', error)
-    },
+    errorMessage: 'Could not remove collaborator',
+    invalidate: (_, variables) => [
+      qk.projectMembers(variables.projectID),
+      qk.projectTasks(variables.projectID),
+      qk.tasks(),
+    ],
   })
 }

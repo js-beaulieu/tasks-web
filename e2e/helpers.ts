@@ -2,34 +2,14 @@ import { expect } from './msw'
 import type { MockApi } from './msw'
 import { makeApiTask } from '../src/test/mocks/fixtures'
 import type { ApiTask } from '../src/api/types'
-import type { MockRequestLogEntry, MockSeed } from '../src/test/mocks/state'
+import { defaultSeed, type MockSeed, type MockRequestLogEntry } from '../src/test/mocks/state'
 
-export const ME = {
-  id: 'dev-user',
-  name: 'Dev User',
-  email: 'dev@example.com',
-  created_at: '2026-01-01T00:00:00Z',
-}
-
-export const USERS = [ME]
-
-export const PROJECT = {
-  id: 'p1',
-  name: 'Task Project',
-  description: 'Testing tasks',
-  owner_id: 'dev-user',
-  effective_role: 'admin',
-  created_at: '2026-06-14T15:50:19Z',
-  updated_at: '2026-06-14T15:50:19Z',
-}
-
-export const STATUSES = [
-  { project_id: 'p1', status: 'todo', position: 0 },
-  { project_id: 'p1', status: 'in_progress', position: 1 },
-  { project_id: 'p1', status: 'done', position: 2 },
-]
-
-export const MEMBERS = [{ project_id: 'p1', user_id: 'dev-user', role: 'admin' }]
+const seed = defaultSeed()
+export const ME = seed.me!
+export const USERS = seed.users ?? []
+export const PROJECT = (seed.projects ?? [])[0]!
+export const STATUSES = seed.statuses ?? []
+export const MEMBERS = seed.members ?? []
 
 export function makeTask(id: string, name: string, status: string, position: number) {
   return makeApiTask({
@@ -46,15 +26,9 @@ export function makeTask(id: string, name: string, status: string, position: num
 
 export async function seedMockApi(mockApi: MockApi, tasks: unknown[], seed: MockSeed = {}) {
   await mockApi.prepare({
-    me: ME,
-    users: USERS,
-    projects: [PROJECT],
-    statuses: STATUSES,
-    members: MEMBERS,
+    ...defaultSeed(),
     tasks: tasks as ApiTask[],
     taskTags: {},
-    nextProjectID: 'p-new',
-    nextTaskID: 't-new',
     ...seed,
   })
 }

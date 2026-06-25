@@ -71,22 +71,38 @@ function cloneUser(user: ApiUser): ApiUser {
   return { ...user }
 }
 
-function cloneSeed(seed: MockSeed): MockSeed {
+function cloneTaskTags(tags: Record<string, string[]>): Record<string, string[]> {
+  return Object.fromEntries(Object.entries(tags).map(([key, value]) => [key, [...value]]))
+}
+
+function cloneRequestLog(log: MockRequestLogEntry[]): MockRequestLogEntry[] {
+  return log.map((entry) => ({
+    ...entry,
+    searchParams: Object.fromEntries(
+      Object.entries(entry.searchParams).map(([key, value]) => [key, [...value]]),
+    ),
+  }))
+}
+
+function cloneOccurrenceTasks(map: Record<string, ApiTask | null>): Record<string, ApiTask | null> {
+  return Object.fromEntries(
+    Object.entries(map).map(([key, value]) => [key, value ? cloneTask(value) : null]),
+  )
+}
+
+function deepCloneMockData(data: MockData): MockData {
   return {
-    me: seed.me ? cloneUser(seed.me) : seed.me ?? undefined,
-    users: seed.users?.map(cloneUser),
-    projects: seed.projects?.map(cloneProject),
-    members: seed.members?.map(cloneMember),
-    statuses: seed.statuses?.map(cloneStatus),
-    tasks: seed.tasks?.map(cloneTask),
-    taskTags: seed.taskTags ? Object.fromEntries(Object.entries(seed.taskTags).map(([key, value]) => [key, [...value]])) : undefined,
-    nextProjectID: seed.nextProjectID,
-    nextTaskID: seed.nextTaskID,
-    nextOccurrenceTasks: seed.nextOccurrenceTasks
-      ? Object.fromEntries(
-          Object.entries(seed.nextOccurrenceTasks).map(([key, value]) => [key, value ? cloneTask(value) : null]),
-        )
-      : undefined,
+    me: data.me ? cloneUser(data.me) : null,
+    users: data.users.map(cloneUser),
+    projects: data.projects.map(cloneProject),
+    members: data.members.map(cloneMember),
+    statuses: data.statuses.map(cloneStatus),
+    tasks: data.tasks.map(cloneTask),
+    taskTags: cloneTaskTags(data.taskTags),
+    requestLog: cloneRequestLog(data.requestLog),
+    nextProjectID: data.nextProjectID,
+    nextTaskID: data.nextTaskID,
+    nextOccurrenceTasks: cloneOccurrenceTasks(data.nextOccurrenceTasks),
   }
 }
 
@@ -112,27 +128,32 @@ function defaultState(): MockData {
 
 const state = defaultState()
 
+export function defaultSeed(): MockSeed {
+  const base = defaultState()
+  return {
+    me: base.me,
+    users: base.users,
+    projects: base.projects,
+    members: base.members,
+    statuses: base.statuses,
+    nextProjectID: base.nextProjectID,
+    nextTaskID: base.nextTaskID,
+  }
+}
+
 function assignState(next: MockData): void {
-  state.me = next.me ? cloneUser(next.me) : null
-  state.users = next.users.map(cloneUser)
-  state.projects = next.projects.map(cloneProject)
-  state.members = next.members.map(cloneMember)
-  state.statuses = next.statuses.map(cloneStatus)
-  state.tasks = next.tasks.map(cloneTask)
-  state.taskTags = Object.fromEntries(
-    Object.entries(next.taskTags).map(([key, value]) => [key, [...value]]),
-  )
-  state.requestLog = next.requestLog.map((entry) => ({
-    ...entry,
-    searchParams: Object.fromEntries(
-      Object.entries(entry.searchParams).map(([key, value]) => [key, [...value]]),
-    ),
-  }))
-  state.nextProjectID = next.nextProjectID
-  state.nextTaskID = next.nextTaskID
-  state.nextOccurrenceTasks = Object.fromEntries(
-    Object.entries(next.nextOccurrenceTasks).map(([key, value]) => [key, value ? cloneTask(value) : null]),
-  )
+  const cloned = deepCloneMockData(next)
+  state.me = cloned.me
+  state.users = cloned.users
+  state.projects = cloned.projects
+  state.members = cloned.members
+  state.statuses = cloned.statuses
+  state.tasks = cloned.tasks
+  state.taskTags = cloned.taskTags
+  state.requestLog = cloned.requestLog
+  state.nextProjectID = cloned.nextProjectID
+  state.nextTaskID = cloned.nextTaskID
+  state.nextOccurrenceTasks = cloned.nextOccurrenceTasks
 }
 
 export function resetMockData(seed: MockSeed = {}): void {
@@ -165,34 +186,11 @@ export function resetMockData(seed: MockSeed = {}): void {
 }
 
 export function seedMockData(seed: MockSeed): void {
-  resetMockData({
-    ...cloneSeed(seed),
-  })
+  resetMockData(seed)
 }
 
 export function getMockData(): MockData {
-  return {
-    me: state.me ? cloneUser(state.me) : null,
-    users: state.users.map(cloneUser),
-    projects: state.projects.map(cloneProject),
-    members: state.members.map(cloneMember),
-    statuses: state.statuses.map(cloneStatus),
-    tasks: state.tasks.map(cloneTask),
-    taskTags: Object.fromEntries(
-      Object.entries(state.taskTags).map(([key, value]) => [key, [...value]]),
-    ),
-    requestLog: state.requestLog.map((entry) => ({
-      ...entry,
-      searchParams: Object.fromEntries(
-        Object.entries(entry.searchParams).map(([key, value]) => [key, [...value]]),
-      ),
-    })),
-    nextProjectID: state.nextProjectID,
-    nextTaskID: state.nextTaskID,
-    nextOccurrenceTasks: Object.fromEntries(
-      Object.entries(state.nextOccurrenceTasks).map(([key, value]) => [key, value ? cloneTask(value) : null]),
-    ),
-  }
+  return deepCloneMockData(state)
 }
 
 export function getLastRequest(): MockRequestLogEntry | undefined {

@@ -72,16 +72,10 @@ export async function apiClient<T>(path: string, options: ApiRequestInit = {}): 
     headers.set('Content-Type', 'application/json')
   }
 
-  const hadOriginalHeaders =
-    originalHeaders !== undefined &&
-    (originalHeaders instanceof Headers
-      ? originalHeaders.keys().next().done === false
-      : Object.keys(originalHeaders).length > 0)
-
   const init: RequestInit = {
     ...rest,
     credentials: 'include',
-    headers: hadOriginalHeaders || headers.has('Content-Type') ? (headers as Headers) : undefined,
+    headers: originalHeaders !== undefined || headers.has('Content-Type') ? (headers as Headers) : undefined,
   }
 
   if (isJsonBody(body)) {
@@ -128,4 +122,8 @@ export async function apiClient<T>(path: string, options: ApiRequestInit = {}): 
 export async function apiList<T>(path: string, options?: ApiRequestInit): Promise<T[]> {
   const { data } = await apiClient<T[] | null>(path, options)
   return data ?? []
+}
+
+export function apiPath(...segments: (string | number)[]): string {
+  return segments.map((s) => encodeURIComponent(String(s))).join('/')
 }

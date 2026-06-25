@@ -1,19 +1,14 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { createResourceMutation } from '@/lib/createResourceMutation'
 import { createSubtask, type CreateTaskInput, type Task } from '@/api/tasks'
-import { showErrorToast } from '@/lib/error'
 import { qk } from '@/lib/queryKeys'
 
 export function useCreateSubtask() {
-  const queryClient = useQueryClient()
-
-  return useMutation<Task, Error, { parentTaskID: string; projectID: string; input: CreateTaskInput }>({
+  return createResourceMutation<Task, { parentTaskID: string; projectID: string; input: CreateTaskInput }>({
     mutationFn: ({ parentTaskID, input }) => createSubtask(parentTaskID, input),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: qk.taskSubtasks(variables.parentTaskID) })
-      queryClient.invalidateQueries({ queryKey: qk.projectTasks(variables.projectID) })
-    },
-    onError: (error) => {
-      showErrorToast('Could not create subtask', error)
-    },
+    errorMessage: 'Could not create subtask',
+    invalidate: (_, variables) => [
+      qk.taskSubtasks(variables.parentTaskID),
+      qk.projectTasks(variables.projectID),
+    ],
   })
 }
