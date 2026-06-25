@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { TaskViewMode, TaskSortMode } from '@/stores/ui'
@@ -117,23 +117,21 @@ const emit = defineEmits<{
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ToggleGroup
-        type="single"
+      <Tabs
         :model-value="view"
-        variant="outline"
-        size="sm"
-        class="h-7 rounded-md"
         @update:model-value="(v) => { if (v) emit('update:view', v as TaskViewMode) }"
       >
-        <ToggleGroupItem value="vertical" class="h-7 text-xs">
-          <List class="mr-1 h-3.5 w-3.5" />
-          List
-        </ToggleGroupItem>
-        <ToggleGroupItem value="board" class="h-7 text-xs">
-          <LayoutGrid class="mr-1 h-3.5 w-3.5" />
-          Board
-        </ToggleGroupItem>
-      </ToggleGroup>
+        <TabsList>
+          <TabsTrigger value="vertical">
+            <List class="size-3.5" />
+            List
+          </TabsTrigger>
+          <TabsTrigger value="board">
+            <LayoutGrid class="size-3.5" />
+            Board
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
     </div>
   </div>
 </template>
