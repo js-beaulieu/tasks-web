@@ -17,13 +17,6 @@ import { cn } from "@/lib/utils"
 
 const props = defineProps<ToasterProps>()
 
-const toastOptions = computed(() => ({
-  classes: {
-    toast: 'rounded-none',
-  },
-  ...props.toastOptions,
-}))
-
 const restProps = computed(() => omit(props, ['toastOptions', 'class']))
 </script>
 
@@ -41,7 +34,11 @@ const restProps = computed(() => omit(props, ['toastOptions', 'class']))
       '--gray5': 'var(--border)',
       '--gray12': 'var(--popover-foreground)',
     }"
-    :toast-options="toastOptions"
+    :toast-options="{
+      classes: {
+        toast: 'rounded-md',
+      },
+    }"
     v-bind="restProps"
   >
     <template #success-icon>

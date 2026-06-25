@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { TaskViewMode, TaskSortMode } from '@/stores/ui'
@@ -42,7 +42,7 @@ const emit = defineEmits<{
           <Button
             variant="outline"
             size="sm"
-            class="h-7 px-2 text-xs gap-1"
+            class="h-8 px-2 text-xs gap-1"
             :class="hasActiveFilters ? 'border-primary' : ''"
           >
             <Filter class="h-3.5 w-3.5" />
@@ -97,7 +97,7 @@ const emit = defineEmits<{
       </Popover>
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
-          <Button variant="outline" size="sm" class="h-7 px-2 text-xs gap-1">
+          <Button variant="outline" size="sm" class="h-8 px-2 text-xs gap-1">
             <ArrowUpDown class="h-3.5 w-3.5" />
             {{ sortLabel }}
           </Button>
@@ -117,22 +117,21 @@ const emit = defineEmits<{
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ToggleGroup
-        type="single"
+      <Tabs
         :model-value="view"
-        variant="outline"
-        size="sm"
         @update:model-value="(v) => { if (v) emit('update:view', v as TaskViewMode) }"
       >
-        <ToggleGroupItem value="vertical" class="text-xs">
-          <List class="mr-1 h-3.5 w-3.5" />
-          List
-        </ToggleGroupItem>
-        <ToggleGroupItem value="board" class="text-xs">
-          <LayoutGrid class="mr-1 h-3.5 w-3.5" />
-          Board
-        </ToggleGroupItem>
-      </ToggleGroup>
+        <TabsList>
+          <TabsTrigger value="vertical" class="data-active:!bg-primary data-active:!text-primary-foreground">
+            <List class="size-3.5" />
+            List
+          </TabsTrigger>
+          <TabsTrigger value="board" class="data-active:!bg-primary data-active:!text-primary-foreground">
+            <LayoutGrid class="size-3.5" />
+            Board
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
     </div>
   </div>
 </template>

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { CalendarClock, RotateCw, MoreHorizontal, Trash2, GripVertical } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
