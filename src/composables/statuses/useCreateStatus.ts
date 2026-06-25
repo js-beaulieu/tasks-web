@@ -1,18 +1,11 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { createResourceMutation } from '@/lib/createResourceMutation'
 import { createProjectStatus, type ProjectStatus } from '@/api/statuses'
-import { showErrorToast } from '@/lib/error'
 import { qk } from '@/lib/queryKeys'
 
 export function useCreateStatus() {
-  const queryClient = useQueryClient()
-
-  return useMutation<ProjectStatus, Error, { projectID: string; status: string }>({
+  return createResourceMutation<ProjectStatus, { projectID: string; status: string }>({
     mutationFn: ({ projectID, status }) => createProjectStatus(projectID, status),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: qk.projectStatuses(variables.projectID) })
-    },
-    onError: (error) => {
-      showErrorToast('Could not create status', error)
-    },
+    errorMessage: 'Could not create status',
+    invalidate: (_, variables) => [qk.projectStatuses(variables.projectID)],
   })
 }

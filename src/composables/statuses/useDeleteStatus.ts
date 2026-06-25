@@ -1,18 +1,11 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { createResourceMutation } from '@/lib/createResourceMutation'
 import { deleteProjectStatus } from '@/api/statuses'
-import { showErrorToast } from '@/lib/error'
 import { qk } from '@/lib/queryKeys'
 
 export function useDeleteStatus() {
-  const queryClient = useQueryClient()
-
-  return useMutation<void, Error, { projectID: string; status: string }>({
+  return createResourceMutation<void, { projectID: string; status: string }>({
     mutationFn: ({ projectID, status }) => deleteProjectStatus(projectID, status),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: qk.projectStatuses(variables.projectID) })
-    },
-    onError: (error) => {
-      showErrorToast('Could not delete status', error)
-    },
+    errorMessage: 'Could not delete status',
+    invalidate: (_, variables) => [qk.projectStatuses(variables.projectID)],
   })
 }

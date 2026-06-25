@@ -1,18 +1,11 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { createResourceMutation } from '@/lib/createResourceMutation'
 import { deleteTask } from '@/api/tasks'
-import { showErrorToast } from '@/lib/error'
 import { qk } from '@/lib/queryKeys'
 
 export function useDeleteTask() {
-  const queryClient = useQueryClient()
-
-  return useMutation<void, Error, { taskID: string; projectID: string }>({
+  return createResourceMutation<void, { taskID: string; projectID: string }>({
     mutationFn: ({ taskID }) => deleteTask(taskID),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: qk.projectTasks(variables.projectID) })
-    },
-    onError: (error) => {
-      showErrorToast('Could not delete task', error)
-    },
+    errorMessage: 'Could not delete task',
+    invalidate: (_, variables) => [qk.projectTasks(variables.projectID)],
   })
 }

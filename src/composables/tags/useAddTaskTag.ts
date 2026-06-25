@@ -1,19 +1,11 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { createResourceMutation } from '@/lib/createResourceMutation'
 import { addTaskTag } from '@/api/tasks'
-import { showErrorToast } from '@/lib/error'
 import { qk } from '@/lib/queryKeys'
 
 export function useAddTaskTag() {
-  const queryClient = useQueryClient()
-
-  return useMutation<void, Error, { taskID: string; tag: string }>({
+  return createResourceMutation<void, { taskID: string; tag: string }>({
     mutationFn: ({ taskID, tag }) => addTaskTag(taskID, tag),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: qk.taskTags(variables.taskID) })
-      queryClient.invalidateQueries({ queryKey: qk.tags() })
-    },
-    onError: (error) => {
-      showErrorToast('Could not add tag', error)
-    },
+    errorMessage: 'Could not add tag',
+    invalidate: (_, variables) => [qk.taskTags(variables.taskID), qk.tags()],
   })
 }
