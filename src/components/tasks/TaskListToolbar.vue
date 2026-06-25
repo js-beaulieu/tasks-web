@@ -121,7 +121,7 @@ const emit = defineEmits<{
         :model-value="view"
         @update:model-value="(v) => { if (v) emit('update:view', v as TaskViewMode) }"
       >
-        <TabsList>
+        <TabsList class="h-7">
           <TabsTrigger value="vertical">
             <List class="size-3.5" />
             List
