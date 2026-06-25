@@ -128,6 +128,19 @@ function defaultState(): MockData {
 
 const state = defaultState()
 
+export function defaultSeed(): MockSeed {
+  const base = defaultState()
+  return {
+    me: base.me,
+    users: base.users,
+    projects: base.projects,
+    members: base.members,
+    statuses: base.statuses,
+    nextProjectID: base.nextProjectID,
+    nextTaskID: base.nextTaskID,
+  }
+}
+
 function assignState(next: MockData): void {
   const cloned = deepCloneMockData(next)
   state.me = cloned.me

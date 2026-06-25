@@ -8,6 +8,9 @@ import { useProject } from '@/composables/projects/useProject'
 import { useMembers } from '@/composables/members/useMembers'
 import { useUsersByID } from '@/composables/users/useUsersByID'
 import { useAccessError } from '@/composables/useAccessError'
+import { useStatuses } from '@/composables/statuses/useStatuses'
+import { useProjectPermissions } from '@/composables/projects/useProjectPermissions'
+import { provideProjectContext } from '@/composables/projects/useProjectContext'
 import TaskWorkspace from '@/components/tasks/TaskWorkspace.vue'
 import ProjectMembersTab from '@/components/projects/ProjectMembersTab.vue'
 import ProjectSettingsTab from '@/components/projects/ProjectSettingsTab.vue'
@@ -21,11 +24,20 @@ const projectID = computed(() => route.params.projectID as string)
 
 const { data: project, isLoading, isError, error } = useProject(projectID)
 const { data: members } = useMembers(projectID)
+const { data: statuses } = useStatuses(projectID)
+const { canModify } = useProjectPermissions(project)
 
 const ownerIDs = computed(() => (project.value ? [project.value.ownerId] : []))
 const memberIDs = computed(() => (members.value ?? []).map((m) => m.userId))
 const allUserIDs = computed(() => [...new Set([...ownerIDs.value, ...memberIDs.value])])
 const { data: usersByID } = useUsersByID(allUserIDs)
+
+provideProjectContext({
+  projectID,
+  statuses: computed(() => statuses.value ?? []),
+  usersByID: computed(() => usersByID.value),
+  canModify,
+})
 
 const activeTab = computed({
   get: () => (route.query.tab as string) || 'tasks',
