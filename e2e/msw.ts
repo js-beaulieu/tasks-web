@@ -1,39 +1,22 @@
 import { test as base, expect } from '@playwright/test'
-import type { ApiProjectMember, ApiTask } from '../src/api/types'
+import type { ApiTask } from '../src/api/types'
 import {
-  addProjectMember,
-  addProjectStatus,
-  addTaskTag,
   captureRequest,
-  createProject,
-  createTask,
-  deleteProject,
-  deleteProjectStatus,
-  deleteTask,
   getLastRequest,
   getMockData,
-  getProject,
-  getRequestLog,
-  getTask,
-  getTaskTags,
-  getUser,
-  listGlobalTags,
-  listProjectMembers,
-  listProjectStatuses,
-  listSubtasks,
-  listTasksByProject,
-  listUsersByIDs,
-  removeProjectMember,
-  removeTaskTag,
   resetMockData,
-  searchUsers,
   setUpdateNextOccurrenceId,
-  updateProjectMember,
-  updateTask,
+  getRequestLog,
   type MockData,
   type MockRequestLogEntry,
   type MockSeed,
 } from '../src/test/mocks/state'
+import {
+  handleMockApiRequest,
+  isMockApiPath,
+  normalizeApiPath,
+  type MockResponseSpec,
+} from '../src/test/mocks/routes'
 
 export interface MockApi {
   prepare(seed?: MockSeed): Promise<void>
@@ -42,20 +25,6 @@ export interface MockApi {
   getLastRequest(): Promise<MockRequestLogEntry | undefined>
   getRequestLog(): Promise<MockRequestLogEntry[]>
   setUpdateNextOccurrenceId(taskID: string, nextOccurrenceTask: ApiTask | null): Promise<void>
-}
-
-function isMockApiPath(pathname: string): boolean {
-  return pathname.startsWith('/api/') || pathname.startsWith('/tasks/')
-}
-
-function normalizeApiPath(pathname: string): string {
-  if (pathname.startsWith('/api/')) {
-    return pathname.slice('/api'.length)
-  }
-  if (pathname.startsWith('/tasks/')) {
-    return pathname.slice('/tasks'.length)
-  }
-  return pathname
 }
 
 async function logPlaywrightRequest(route: import('@playwright/test').Route): Promise<void> {
@@ -106,195 +75,29 @@ async function fulfillNoContent(route: import('@playwright/test').Route): Promis
   await route.fulfill({ status: 204, body: '' })
 }
 
+async function fulfillFromSpec(route: import('@playwright/test').Route, spec: MockResponseSpec): Promise<void> {
+  if (spec.kind === 'json') {
+    return fulfillJson(route, spec.body, spec.headers, spec.status)
+  }
+  if (spec.kind === 'problem') {
+    return fulfillProblem(route, spec.status, spec.title, spec.detail)
+  }
+  return fulfillNoContent(route)
+}
+
 async function handleApiRoute(route: import('@playwright/test').Route): Promise<void> {
   const request = route.request()
   const url = new URL(request.url())
   const pathname = normalizeApiPath(url.pathname)
-  const method = request.method()
 
   await logPlaywrightRequest(route)
-
-  if (pathname === '/users/me' && method === 'GET') {
-    const me = getMockData().me
-    if (!me) return fulfillProblem(route, 401, 'Unauthorized', 'No active session')
-    return fulfillJson(route, me)
-  }
-
-  if (pathname === '/users/me' && method === 'PATCH') {
-    const me = getMockData().me
-    if (!me) return fulfillProblem(route, 401, 'Unauthorized', 'No active session')
-    return fulfillJson(route, { ...me, ...(jsonBody(route) as object) })
-  }
-
-  if (pathname === '/users' && method === 'GET') {
-    const ids = url.searchParams.getAll('ids')
-    const search = url.searchParams.get('search')
-    const limit = Number(url.searchParams.get('limit') ?? '20')
-    if (search) return fulfillJson(route, searchUsers(search, limit))
-    if (ids.length > 0) return fulfillJson(route, listUsersByIDs(ids))
-    return fulfillJson(route, getMockData().users)
-  }
-
-  const userMatch = pathname.match(/^\/users\/([^/]+)$/)
-  if (userMatch && method === 'GET') {
-    const user = getUser(decodeURIComponent(userMatch[1]!))
-    return user ? fulfillJson(route, user) : fulfillProblem(route, 404, 'Not Found')
-  }
-
-  if (pathname === '/projects' && method === 'GET') {
-    return fulfillJson(route, getMockData().projects)
-  }
-
-  if (pathname === '/projects' && method === 'POST') {
-    const body = jsonBody(route) as {
-      name: string
-      description?: string
-      due_date?: string
-      assignee_id?: string
-    }
-    return fulfillJson(route, createProject(body))
-  }
-
-  const projectMatch = pathname.match(/^\/projects\/([^/]+)$/)
-  if (projectMatch) {
-    const projectID = decodeURIComponent(projectMatch[1]!)
-    if (method === 'GET') {
-      const project = getProject(projectID)
-      return project ? fulfillJson(route, project) : fulfillProblem(route, 404, 'Not Found')
-    }
-    if (method === 'PATCH') {
-      const project = updateProject(projectID, (jsonBody(route) ?? {}) as Record<string, unknown>)
-      return project ? fulfillJson(route, project) : fulfillProblem(route, 404, 'Not Found')
-    }
-    if (method === 'DELETE') {
-      return deleteProject(projectID) ? fulfillNoContent(route) : fulfillProblem(route, 404, 'Not Found')
-    }
-  }
-
-  const membersMatch = pathname.match(/^\/projects\/([^/]+)\/members$/)
-  if (membersMatch) {
-    const projectID = decodeURIComponent(membersMatch[1]!)
-    if (method === 'GET') return fulfillJson(route, listProjectMembers(projectID))
-    if (method === 'POST') {
-      const body = jsonBody(route) as { user_id: string; role: ApiProjectMember['role'] }
-      return fulfillJson(route, addProjectMember(projectID, body.user_id, body.role))
-    }
-  }
-
-  const memberMatch = pathname.match(/^\/projects\/([^/]+)\/members\/([^/]+)$/)
-  if (memberMatch) {
-    const projectID = decodeURIComponent(memberMatch[1]!)
-    const userID = decodeURIComponent(memberMatch[2]!)
-    if (method === 'PATCH') {
-      const body = jsonBody(route) as Pick<ApiProjectMember, 'role'>
-      const member = updateProjectMember(projectID, userID, body.role)
-      return member ? fulfillJson(route, member) : fulfillProblem(route, 404, 'Not Found')
-    }
-    if (method === 'DELETE') {
-      const result = removeProjectMember(projectID, userID)
-      return result ? fulfillJson(route, result) : fulfillProblem(route, 404, 'Not Found')
-    }
-  }
-
-  const statusesMatch = pathname.match(/^\/projects\/([^/]+)\/statuses$/)
-  if (statusesMatch) {
-    const projectID = decodeURIComponent(statusesMatch[1]!)
-    if (method === 'GET') return fulfillJson(route, listProjectStatuses(projectID))
-    if (method === 'POST') {
-      const body = jsonBody(route) as { status: string }
-      const result = addProjectStatus(projectID, body.status)
-      if (result.conflict) return fulfillProblem(route, 409, 'Conflict', 'status already exists')
-      return fulfillJson(route, result.created, undefined, 201)
-    }
-  }
-
-  if (pathname.match(/^\/projects\/[^/]+\/statuses\/[^/]+$/) && method === 'DELETE') {
-    const statusMatch = pathname.match(/^\/projects\/([^/]+)\/statuses\/([^/]+)$/)
-    const projectID = decodeURIComponent(statusMatch![1]!)
-    const status = decodeURIComponent(statusMatch![2]!)
-    const result = deleteProjectStatus(projectID, status)
-    if (result.notFound) return fulfillProblem(route, 404, 'Not Found')
-    if (result.conflict) return fulfillProblem(route, 409, 'Conflict', 'status is in use by tasks')
-    return fulfillNoContent(route)
-  }
-
-  const projectTasksMatch = pathname.match(/^\/projects\/([^/]+)\/tasks$/)
-  if (projectTasksMatch) {
-    const projectID = decodeURIComponent(projectTasksMatch[1]!)
-    if (method === 'GET') {
-      return fulfillJson(
-        route,
-        listTasksByProject(projectID, {
-          status: url.searchParams.get('status') ?? undefined,
-          assigneeID: url.searchParams.get('assignee_id') ?? undefined,
-          tag: url.searchParams.get('tag') ?? undefined,
-        }),
-      )
-    }
-    if (method === 'POST') {
-      return fulfillJson(route, createTask(projectID, jsonBody(route) as Partial<ApiTask> & Pick<ApiTask, 'name'>))
-    }
-  }
-
-  if (pathname === '/tags' && method === 'GET') {
-    return fulfillJson(route, listGlobalTags())
-  }
-
-  const taskMatch = pathname.match(/^\/tasks\/([^/]+)$/)
-  if (taskMatch) {
-    const taskID = decodeURIComponent(taskMatch[1]!)
-    if (method === 'GET') {
-      const task = getTask(taskID)
-      return task ? fulfillJson(route, task) : fulfillProblem(route, 404, 'Not Found')
-    }
-    if (method === 'PATCH') {
-      const result = updateTask(taskID, (jsonBody(route) ?? {}) as Partial<ApiTask>)
-      if (!result) return fulfillProblem(route, 404, 'Not Found')
-      const headers: Record<string, string> = {}
-      if (result.nextOccurrenceId) {
-        headers['X-Next-Occurrence-Id'] = result.nextOccurrenceId
-      }
-      return fulfillJson(route, result.task, headers)
-    }
-    if (method === 'DELETE') {
-      return deleteTask(taskID) ? fulfillNoContent(route) : fulfillProblem(route, 404, 'Not Found')
-    }
-  }
-
-  const taskTagsMatch = pathname.match(/^\/tasks\/([^/]+)\/tags$/)
-  if (taskTagsMatch) {
-    const taskID = decodeURIComponent(taskTagsMatch[1]!)
-    if (method === 'GET') return fulfillJson(route, getTaskTags(taskID))
-    if (method === 'POST') {
-      const body = jsonBody(route) as { tag: string }
-      addTaskTag(taskID, body.tag)
-      return fulfillJson(route, {})
-    }
-  }
-
-  const taskTagMatch = pathname.match(/^\/tasks\/([^/]+)\/tags\/([^/]+)$/)
-  if (taskTagMatch && method === 'DELETE') {
-    removeTaskTag(decodeURIComponent(taskTagMatch[1]!), decodeURIComponent(taskTagMatch[2]!))
-    return fulfillNoContent(route)
-  }
-
-  const subtasksMatch = pathname.match(/^\/tasks\/([^/]+)\/tasks$/)
-  if (subtasksMatch) {
-    const parentID = decodeURIComponent(subtasksMatch[1]!)
-    if (method === 'GET') return fulfillJson(route, listSubtasks(parentID))
-    if (method === 'POST') {
-      const parentTask = getTask(parentID)
-      return fulfillJson(
-        route,
-        createTask(parentTask?.project_id ?? 'p1', {
-          ...(jsonBody(route) as Partial<ApiTask> & Pick<ApiTask, 'name'>),
-          parent_id: parentID,
-        }),
-      )
-    }
-  }
-
-  return fulfillProblem(route, 404, 'Not Found')
+  const spec = handleMockApiRequest({
+    method: request.method(),
+    url,
+    pathname,
+    jsonBody: jsonBody(route),
+  })
+  return fulfillFromSpec(route, spec)
 }
 
 export const test = base.extend<{ mockApi: MockApi }>({
