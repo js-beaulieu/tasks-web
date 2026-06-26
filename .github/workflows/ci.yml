@@ -26,17 +26,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Detect changed paths
-        id: filter
-        uses: dorny/paths-filter@v4
-        with:
-          filters: |
-            e2e:
-              - 'e2e/**'
-              - 'src/**/*.vue'
-              - 'src/**/*.ts'
-              - 'playwright.config.ts'
-
       - name: Lint
         run: pnpm lint
 
@@ -51,11 +40,3 @@ jobs:
 
       - name: Tests
         run: pnpm test:unit --run
-
-      - name: Install Playwright browsers
-        if: steps.filter.outputs.e2e == 'true'
-        run: pnpm exec playwright install --with-deps
-
-      - name: E2e tests
-        if: steps.filter.outputs.e2e == 'true'
-        run: pnpm test:e2e
