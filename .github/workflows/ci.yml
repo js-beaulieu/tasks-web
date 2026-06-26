@@ -40,3 +40,9 @@ jobs:
 
       - name: Tests
         run: pnpm test:unit --run
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox
+
+      - name: E2e tests
+        run: pnpm test:e2e
