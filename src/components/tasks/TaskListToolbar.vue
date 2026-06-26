@@ -84,10 +84,16 @@ const emit = defineEmits<{
               >
                 <Checkbox
                   :model-value="selectedTags.includes(tag)"
-                  @update:model-value="(v: boolean | 'indeterminate') => {
-                    if (v === true) emit('update:selectedTags', [...selectedTags, tag])
-                    else emit('update:selectedTags', selectedTags.filter((t) => t !== tag))
-                  }"
+                  @update:model-value="
+                    (v: boolean | 'indeterminate') => {
+                      if (v === true) emit('update:selectedTags', [...selectedTags, tag])
+                      else
+                        emit(
+                          'update:selectedTags',
+                          selectedTags.filter((t) => t !== tag),
+                        )
+                    }
+                  "
                 />
                 {{ tag }}
               </label>
@@ -119,14 +125,24 @@ const emit = defineEmits<{
       </DropdownMenu>
       <Tabs
         :model-value="view"
-        @update:model-value="(v) => { if (v) emit('update:view', v as TaskViewMode) }"
+        @update:model-value="
+          (v) => {
+            if (v) emit('update:view', v as TaskViewMode)
+          }
+        "
       >
         <TabsList>
-          <TabsTrigger value="vertical" class="data-active:!bg-primary data-active:!text-primary-foreground">
+          <TabsTrigger
+            value="vertical"
+            class="data-active:!bg-primary data-active:!text-primary-foreground"
+          >
             <List class="size-3.5" />
             List
           </TabsTrigger>
-          <TabsTrigger value="board" class="data-active:!bg-primary data-active:!text-primary-foreground">
+          <TabsTrigger
+            value="board"
+            class="data-active:!bg-primary data-active:!text-primary-foreground"
+          >
             <LayoutGrid class="size-3.5" />
             Board
           </TabsTrigger>

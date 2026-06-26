@@ -3,11 +3,20 @@ import { ref } from 'vue'
 import type { Task } from '@/api/tasks'
 import type { User } from '@/api/users'
 
-const createMutate = vi.fn<(input: { projectID: string; input: { name: string; status: string; assigneeId?: string } }) => void>()
-const updateMutate = vi.fn<(
-  input: { taskID: string; input: { status?: string; position?: number } },
-  opts?: { onError?: () => void },
-) => void>()
+const createMutate =
+  vi.fn<
+    (input: {
+      projectID: string
+      input: { name: string; status: string; assigneeId?: string }
+    }) => void
+  >()
+const updateMutate =
+  vi.fn<
+    (
+      input: { taskID: string; input: { status?: string; position?: number } },
+      opts?: { onError?: () => void },
+    ) => void
+  >()
 
 vi.mock('@/composables/tasks/useCreateTask', () => ({
   useCreateTask: () => ({
@@ -135,7 +144,13 @@ describe('useTaskActions', () => {
   })
 
   it('deleteTaskObj is null when deleteTaskID is null', () => {
-    const state = useTaskActions(ref('p1'), ref([makeTask()]), ref(undefined), ref('done'), ref('todo'))
+    const state = useTaskActions(
+      ref('p1'),
+      ref([makeTask()]),
+      ref(undefined),
+      ref('done'),
+      ref('todo'),
+    )
     expect(state.deleteTaskObj.value).toBeNull()
   })
 })

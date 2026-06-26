@@ -23,9 +23,7 @@ function fromApiProjectMember(m: ApiProjectMember): ProjectMember {
 }
 
 export async function listProjectMembers(projectID: string): Promise<ProjectMember[]> {
-  const members = await apiList<ApiProjectMember>(
-    apiPath('projects', projectID, 'members'),
-  )
+  const members = await apiList<ApiProjectMember>(apiPath('projects', projectID, 'members'))
   return members.map(fromApiProjectMember)
 }
 

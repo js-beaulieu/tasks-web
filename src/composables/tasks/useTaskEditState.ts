@@ -24,22 +24,44 @@ export function useTaskEditState(task: Ref<Task | undefined>) {
     dirty.value = false
   }
 
-  watch(task, (t) => {
-    if (!t) return
-    resetEditFields(t)
-  }, { immediate: true })
+  watch(
+    task,
+    (t) => {
+      if (!t) return
+      resetEditFields(t)
+    },
+    { immediate: true },
+  )
 
-  watch([editName, editDescription, editProjectId, editStatus, editAssigneeId, editDueDate, editRecurrence], () => {
-    if (!task.value) return
-    const projectChanged = editProjectId.value !== task.value.projectId
-    const nameChanged = editName.value !== task.value.name
-    const descChanged = editDescription.value !== (task.value.description ?? '')
-    const statusChanged = editStatus.value !== task.value.status
-    const assigneeChanged = editAssigneeId.value !== (task.value.assigneeId ?? '__none__')
-    const dueDateChanged = dateValueToISO(editDueDate.value) !== (task.value.dueDate ?? undefined)
-    const recurrenceChanged = editRecurrence.value !== (task.value.recurrence ?? null)
-    dirty.value = projectChanged || nameChanged || descChanged || statusChanged || assigneeChanged || dueDateChanged || recurrenceChanged
-  })
+  watch(
+    [
+      editName,
+      editDescription,
+      editProjectId,
+      editStatus,
+      editAssigneeId,
+      editDueDate,
+      editRecurrence,
+    ],
+    () => {
+      if (!task.value) return
+      const projectChanged = editProjectId.value !== task.value.projectId
+      const nameChanged = editName.value !== task.value.name
+      const descChanged = editDescription.value !== (task.value.description ?? '')
+      const statusChanged = editStatus.value !== task.value.status
+      const assigneeChanged = editAssigneeId.value !== (task.value.assigneeId ?? '__none__')
+      const dueDateChanged = dateValueToISO(editDueDate.value) !== (task.value.dueDate ?? undefined)
+      const recurrenceChanged = editRecurrence.value !== (task.value.recurrence ?? null)
+      dirty.value =
+        projectChanged ||
+        nameChanged ||
+        descChanged ||
+        statusChanged ||
+        assigneeChanged ||
+        dueDateChanged ||
+        recurrenceChanged
+    },
+  )
 
   function buildUpdateInput(): UpdateTaskInput {
     const input: UpdateTaskInput = {}

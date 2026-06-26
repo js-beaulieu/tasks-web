@@ -1,10 +1,4 @@
-import type {
-  ApiProject,
-  ApiProjectMember,
-  ApiProjectStatus,
-  ApiTask,
-  ApiUser,
-} from '@/api/types'
+import type { ApiProject, ApiProjectMember, ApiProjectStatus, ApiTask, ApiUser } from '@/api/types'
 
 const DEFAULT_CREATED_AT = '2026-01-01T00:00:00Z'
 const DEFAULT_UPDATED_AT = '2026-01-02T00:00:00Z'
@@ -30,9 +24,7 @@ export function makeApiProject(partial: Partial<ApiProject> = {}): ApiProject {
   }
 }
 
-export function makeApiProjectMember(
-  partial: Partial<ApiProjectMember> = {},
-): ApiProjectMember {
+export function makeApiProjectMember(partial: Partial<ApiProjectMember> = {}): ApiProjectMember {
   return {
     project_id: 'p1',
     user_id: 'dev-user',
@@ -41,9 +33,7 @@ export function makeApiProjectMember(
   }
 }
 
-export function makeApiProjectStatus(
-  partial: Partial<ApiProjectStatus> = {},
-): ApiProjectStatus {
+export function makeApiProjectStatus(partial: Partial<ApiProjectStatus> = {}): ApiProjectStatus {
   return {
     project_id: 'p1',
     status: 'todo',

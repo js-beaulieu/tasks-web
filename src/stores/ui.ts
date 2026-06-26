@@ -16,44 +16,48 @@ function initialColorMode(): ColorMode {
   return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
 }
 
-export const useUIStore = defineStore('ui', () => {
-  const sortMode = ref<TaskSortMode>('position')
-  const viewMode = ref<TaskViewMode>(defaultViewMode())
-  const theme = ref<ColorMode>(initialColorMode())
+export const useUIStore = defineStore(
+  'ui',
+  () => {
+    const sortMode = ref<TaskSortMode>('position')
+    const viewMode = ref<TaskViewMode>(defaultViewMode())
+    const theme = ref<ColorMode>(initialColorMode())
 
-  const isManualOrder = computed(() => sortMode.value === 'position')
-  const isDark = computed(() => theme.value === 'dark')
+    const isManualOrder = computed(() => sortMode.value === 'position')
+    const isDark = computed(() => theme.value === 'dark')
 
-  function setSortMode(mode: TaskSortMode) {
-    sortMode.value = mode
-  }
+    function setSortMode(mode: TaskSortMode) {
+      sortMode.value = mode
+    }
 
-  function setViewMode(mode: TaskViewMode) {
-    viewMode.value = mode
-  }
+    function setViewMode(mode: TaskViewMode) {
+      viewMode.value = mode
+    }
 
-  function setTheme(mode: ColorMode) {
-    theme.value = mode
-  }
+    function setTheme(mode: ColorMode) {
+      theme.value = mode
+    }
 
-  function toggleTheme() {
-    theme.value = theme.value === 'dark' ? 'light' : 'dark'
-  }
+    function toggleTheme() {
+      theme.value = theme.value === 'dark' ? 'light' : 'dark'
+    }
 
-  return {
-    sortMode,
-    viewMode,
-    theme,
-    isManualOrder,
-    isDark,
-    setSortMode,
-    setViewMode,
-    setTheme,
-    toggleTheme,
-  }
-}, {
-  persist: {
-    key: 'tasks-web-ui',
-    pick: ['sortMode', 'viewMode', 'theme'],
+    return {
+      sortMode,
+      viewMode,
+      theme,
+      isManualOrder,
+      isDark,
+      setSortMode,
+      setViewMode,
+      setTheme,
+      toggleTheme,
+    }
   },
-} as { persist: PersistenceOptions })
+  {
+    persist: {
+      key: 'tasks-web-ui',
+      pick: ['sortMode', 'viewMode', 'theme'],
+    },
+  } as { persist: PersistenceOptions },
+)

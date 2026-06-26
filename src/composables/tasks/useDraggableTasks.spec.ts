@@ -44,11 +44,9 @@ describe('useDraggableTasks', () => {
 
   it('initializes localTasks from the provided tasks ref', () => {
     const tasks = ref(initialTasks)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
-    const { localTasks } = useDraggableTasks(
-      { tasks, readStatus: readStatusFromAttr },
-      emit,
-    )
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const { localTasks } = useDraggableTasks({ tasks, readStatus: readStatusFromAttr }, emit)
 
     expect(localTasks.value).toEqual(initialTasks)
     expect(localTasks.value).not.toBe(initialTasks)
@@ -57,7 +55,8 @@ describe('useDraggableTasks', () => {
   it('resets localTasks when dragResetKey changes', async () => {
     const tasks = ref(initialTasks)
     const dragResetKey = ref(0)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
     const { localTasks } = useDraggableTasks(
       { tasks, dragResetKey, readStatus: readStatusFromAttr },
       emit,
@@ -73,11 +72,9 @@ describe('useDraggableTasks', () => {
 
   it('onStart adds sortable-dragging class and tracks dragged task ID', () => {
     const tasks = ref(initialTasks)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
-    const { onStart } = useDraggableTasks(
-      { tasks, readStatus: readStatusFromAttr },
-      emit,
-    )
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const { onStart } = useDraggableTasks({ tasks, readStatus: readStatusFromAttr }, emit)
 
     document.body.classList.remove('sortable-dragging')
     const item = makeEl({ taskId: 't1' })
@@ -88,11 +85,9 @@ describe('useDraggableTasks', () => {
 
   it('onEnd removes sortable-dragging class', () => {
     const tasks = ref(initialTasks)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
-    const { onEnd } = useDraggableTasks(
-      { tasks, readStatus: readStatusFromAttr },
-      emit,
-    )
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const { onEnd } = useDraggableTasks({ tasks, readStatus: readStatusFromAttr }, emit)
 
     document.body.classList.add('sortable-dragging')
     onEnd({ from: makeEl({}, 'todo'), to: makeEl({}, 'todo'), newIndex: 1 })
@@ -102,11 +97,9 @@ describe('useDraggableTasks', () => {
 
   it('onEnd emits reorder for same-status reorder', () => {
     const tasks = ref(initialTasks)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
-    const { onStart, onEnd } = useDraggableTasks(
-      { tasks, readStatus: readStatusFromAttr },
-      emit,
-    )
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const { onStart, onEnd } = useDraggableTasks({ tasks, readStatus: readStatusFromAttr }, emit)
 
     const item = makeEl({ taskId: 't1' })
     onStart({ item })
@@ -117,7 +110,8 @@ describe('useDraggableTasks', () => {
 
   it('onEnd removes dragged task from localTasks on cross-status move', () => {
     const tasks = ref(initialTasks)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
     const { onStart, onEnd, localTasks } = useDraggableTasks(
       { tasks, readStatus: readStatusFromAttr },
       emit,
@@ -133,11 +127,9 @@ describe('useDraggableTasks', () => {
 
   it('onAdd emits reorder with target status for cross-status drop', () => {
     const tasks = ref(initialTasks)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
-    const { onAdd } = useDraggableTasks(
-      { tasks, readStatus: readStatusFromAttr },
-      emit,
-    )
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const { onAdd } = useDraggableTasks({ tasks, readStatus: readStatusFromAttr }, emit)
 
     const toEl = makeEl({}, 'in_progress')
     const item = makeEl({ taskId: 't1' })
@@ -148,11 +140,9 @@ describe('useDraggableTasks', () => {
 
   it('onAdd falls back to newIndex when newDraggableIndex is missing', () => {
     const tasks = ref(initialTasks)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
-    const { onAdd } = useDraggableTasks(
-      { tasks, readStatus: readStatusFromAttr },
-      emit,
-    )
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const { onAdd } = useDraggableTasks({ tasks, readStatus: readStatusFromAttr }, emit)
 
     const toEl = makeEl({}, 'done')
     const item = makeEl({ taskId: 't1' })
@@ -163,11 +153,9 @@ describe('useDraggableTasks', () => {
 
   it('onAdd resets localTasks when status cannot be read', () => {
     const tasks = ref(initialTasks)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
-    const { onAdd, localTasks } = useDraggableTasks(
-      { tasks, readStatus: readStatusFromAttr },
-      emit,
-    )
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const { onAdd, localTasks } = useDraggableTasks({ tasks, readStatus: readStatusFromAttr }, emit)
 
     const toEl = makeEl()
     onAdd({ to: toEl })
@@ -178,11 +166,9 @@ describe('useDraggableTasks', () => {
 
   it('onAdd uses dataset.id when dataset.taskId is missing', () => {
     const tasks = ref(initialTasks)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
-    const { onAdd } = useDraggableTasks(
-      { tasks, readStatus: readStatusFromAttr },
-      emit,
-    )
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const { onAdd } = useDraggableTasks({ tasks, readStatus: readStatusFromAttr }, emit)
 
     const toEl = makeEl({}, 'todo')
     const item = makeEl({ id: 'fallback-id' })
@@ -193,11 +179,9 @@ describe('useDraggableTasks', () => {
 
   it('works with readStatusFromClosest strategy (TaskGroup pattern)', () => {
     const tasks = ref(initialTasks)
-    const emit = vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
-    const { onStart, onEnd } = useDraggableTasks(
-      { tasks, readStatus: readStatusFromClosest },
-      emit,
-    )
+    const emit =
+      vi.fn<(e: 'reorder', taskID: string, newIndex: number, newStatus?: string) => void>()
+    const { onStart, onEnd } = useDraggableTasks({ tasks, readStatus: readStatusFromClosest }, emit)
 
     const wrapper = makeEl({}, 'todo')
     const fromEl = document.createElement('div')

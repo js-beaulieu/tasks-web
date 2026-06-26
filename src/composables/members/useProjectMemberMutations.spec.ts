@@ -13,9 +13,24 @@ describe('project member mutations', () => {
       projects: [makeApiProject({ id: 'p1', owner_id: 'dev-user' })],
       members: [makeApiProjectMember({ project_id: 'p1', user_id: 'u2', role: 'read' })],
       users: [
-        { id: 'dev-user', name: 'Dev User', email: 'dev@example.com', created_at: '2026-01-01T00:00:00Z' },
-        { id: 'u2', name: 'Member User', email: 'member@example.com', created_at: '2026-01-02T00:00:00Z' },
-        { id: 'u3', name: 'New User', email: 'new@example.com', created_at: '2026-01-03T00:00:00Z' },
+        {
+          id: 'dev-user',
+          name: 'Dev User',
+          email: 'dev@example.com',
+          created_at: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 'u2',
+          name: 'Member User',
+          email: 'member@example.com',
+          created_at: '2026-01-02T00:00:00Z',
+        },
+        {
+          id: 'u3',
+          name: 'New User',
+          email: 'new@example.com',
+          created_at: '2026-01-03T00:00:00Z',
+        },
       ],
       tasks: [
         makeApiTask({
@@ -75,9 +90,7 @@ describe('project member mutations', () => {
     await vi.waitFor(() => expect(getLastRequest()?.pathname).toBe('/tasks/projects/p1/members/u2'))
     expect(getLastRequest()?.body).toEqual({ role: 'admin' })
     await vi.waitFor(() => {
-      expect(getMockData().members).toEqual([
-        { project_id: 'p1', user_id: 'u2', role: 'admin' },
-      ])
+      expect(getMockData().members).toEqual([{ project_id: 'p1', user_id: 'u2', role: 'admin' }])
     })
   })
 

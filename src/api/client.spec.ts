@@ -189,10 +189,14 @@ describe('apiClient', () => {
 
   it('throws TimeoutError when request exceeds timeout', async () => {
     vi.useFakeTimers()
-    vi.stubGlobal('fetch', (_url: string, init: RequestInit) =>
-      new Promise((_resolve, reject) => {
-        init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
-      }),
+    vi.stubGlobal(
+      'fetch',
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          )
+        }),
     )
 
     const promise = apiClient('users/me', { timeout: 5000 })
@@ -204,10 +208,14 @@ describe('apiClient', () => {
 
   it('allows overriding timeout per request', async () => {
     vi.useFakeTimers()
-    vi.stubGlobal('fetch', (_url: string, init: RequestInit) =>
-      new Promise((_resolve, reject) => {
-        init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
-      }),
+    vi.stubGlobal(
+      'fetch',
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          )
+        }),
     )
 
     const promise = apiClient('users/me', { timeout: 100 })

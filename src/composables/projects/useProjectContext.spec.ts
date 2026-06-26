@@ -20,7 +20,8 @@ describe('useProjectContext', () => {
     const Consumer = defineComponent({
       setup() {
         const ctx = useProjectContext()!
-        return () => h('div', `${ctx.projectID.value}|${ctx.statuses.value.length}|${ctx.canModify.value}`)
+        return () =>
+          h('div', `${ctx.projectID.value}|${ctx.statuses.value.length}|${ctx.canModify.value}`)
       },
     })
 
@@ -29,7 +30,14 @@ describe('useProjectContext', () => {
         provideProjectContext({
           projectID: computed(() => 'p1'),
           statuses: computed(() => [{ projectId: 'p1', status: 'todo', position: 0 }]),
-          usersByID: computed(() => ({ u1: { id: 'u1', name: 'Alice', email: 'a@example.com', createdAt: '2026-01-01T00:00:00Z' } })),
+          usersByID: computed(() => ({
+            u1: {
+              id: 'u1',
+              name: 'Alice',
+              email: 'a@example.com',
+              createdAt: '2026-01-01T00:00:00Z',
+            },
+          })),
           canModify: computed(() => true),
         })
         return () => h(Consumer)

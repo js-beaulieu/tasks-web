@@ -61,18 +61,14 @@ const sortedProjects = computed(() => {
   switch (sort.value) {
     case 'oldest':
       return list.sort(
-        (a, b) =>
-          new Date(a.project.createdAt).getTime() -
-          new Date(b.project.createdAt).getTime(),
+        (a, b) => new Date(a.project.createdAt).getTime() - new Date(b.project.createdAt).getTime(),
       )
     case 'name':
       return list.sort((a, b) => a.project.name.localeCompare(b.project.name))
     case 'newest':
     default:
       return list.sort(
-        (a, b) =>
-          new Date(b.project.createdAt).getTime() -
-          new Date(a.project.createdAt).getTime(),
+        (a, b) => new Date(b.project.createdAt).getTime() - new Date(a.project.createdAt).getTime(),
       )
   }
 })
@@ -92,9 +88,7 @@ const formMode = ref<'create' | 'edit'>('create')
 const formProject = ref<Project>(makeEmptyProject())
 const deleteOpen = ref(false)
 const deleteProjectRef = ref<Project | undefined>(undefined)
-const formBusy = computed(
-  () => createMutation.isPending.value || updateMutation.isPending.value,
-)
+const formBusy = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 const deleteBusy = deleteMutation.isPending
 
 function openCreate() {
@@ -169,11 +163,7 @@ const accessError = useAccessError(isError, error, 'projects')
 
     <LoadingState v-if="isLoading" message="Loading projects…" />
 
-    <ErrorAlert
-      v-else-if="accessError"
-      :title="accessError.title"
-      :message="accessError.message"
-    />
+    <ErrorAlert v-else-if="accessError" :title="accessError.title" :message="accessError.message" />
 
     <div
       v-else-if="sortedProjects.length === 0"
@@ -190,10 +180,7 @@ const accessError = useAccessError(isError, error, 'projects')
       </Button>
     </div>
 
-    <div
-      v-else
-      class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
-    >
+    <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       <ProjectCard
         v-for="item in sortedProjects"
         :key="item.project.id"

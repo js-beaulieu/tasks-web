@@ -37,7 +37,12 @@ function onInput(e: Event) {
       :placeholder="placeholder ?? 'Task name…'"
       class="h-8 text-sm"
       @input="onInput"
-      @keydown="(e: KeyboardEvent) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') open = false }"
+      @keydown="
+        (e: KeyboardEvent) => {
+          if (e.key === 'Enter') submit()
+          if (e.key === 'Escape') open = false
+        }
+      "
     />
     <Button class="h-8 shrink-0" :disabled="!hasText || isPending" @click="submit">
       <Loader2 v-if="isPending" class="size-4 animate-spin" />

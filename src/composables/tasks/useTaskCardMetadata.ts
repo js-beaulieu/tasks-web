@@ -4,9 +4,7 @@ import type { MaybeRef } from 'vue'
 import { listTaskTags, listSubtasks, type Task } from '@/api/tasks'
 import { qk } from '@/lib/queryKeys'
 
-export function useTaskCardMetadata(
-  taskIDs: MaybeRef<string[]>,
-) {
+export function useTaskCardMetadata(taskIDs: MaybeRef<string[]>) {
   const ids = computed(() => toValue(taskIDs))
 
   const tagQueries = useQueries({

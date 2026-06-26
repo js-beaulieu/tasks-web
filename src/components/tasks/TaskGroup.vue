@@ -46,7 +46,8 @@ const { localTasks, onStart, onEnd, onAdd } = useDraggableTasks(
   {
     tasks: computed(() => props.tasks),
     dragResetKey: computed(() => props.dragResetKey),
-    readStatus: (el: HTMLElement) => el.closest('[data-status]')?.getAttribute('data-status') ?? null,
+    readStatus: (el: HTMLElement) =>
+      el.closest('[data-status]')?.getAttribute('data-status') ?? null,
   },
   (_e, taskID, newIndex, newStatus) => {
     if (newStatus !== undefined) emit('reorder', taskID, newIndex, newStatus)
@@ -68,11 +69,7 @@ const { localTasks, onStart, onEnd, onAdd } = useDraggableTasks(
       </Badge>
     </button>
 
-    <div
-      v-if="!collapsed"
-      :data-status="status"
-      class="flex flex-col gap-2 pl-2"
-    >
+    <div v-if="!collapsed" :data-status="status" class="flex flex-col gap-2 pl-2">
       <VueDraggable
         v-if="dragEnabled"
         :key="dragResetKey"

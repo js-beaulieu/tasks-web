@@ -20,7 +20,12 @@ describe('queryKeys (qk)', () => {
 
   it('projectTasks returns ["projects", id, "tasks", filters]', () => {
     expect(qk.projectTasks('p1')).toEqual(['projects', 'p1', 'tasks', undefined])
-    expect(qk.projectTasks('p1', { status: 'todo' })).toEqual(['projects', 'p1', 'tasks', { status: 'todo' }])
+    expect(qk.projectTasks('p1', { status: 'todo' })).toEqual([
+      'projects',
+      'p1',
+      'tasks',
+      { status: 'todo' },
+    ])
   })
 
   it('projectStatuses returns ["projects", id, "statuses"]', () => {

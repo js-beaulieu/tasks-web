@@ -4,10 +4,7 @@ import type { MaybeRef } from 'vue'
 import { searchUsers } from '@/api/users'
 import { qk } from '@/lib/queryKeys'
 
-export function useUserSearch(
-  query: MaybeRef<string>,
-  limit: MaybeRef<number> = 20,
-) {
+export function useUserSearch(query: MaybeRef<string>, limit: MaybeRef<number> = 20) {
   const normalizedQuery = computed(() => toValue(query).trim())
   const normalizedLimit = computed(() => toValue(limit))
 

@@ -77,7 +77,13 @@ const {
   handleMoveStatus,
   handleReorder,
   handleDeleteTask,
-} = useTaskActions(computed(() => props.projectID), tasks, me, doneStatus, firstStatus)
+} = useTaskActions(
+  computed(() => props.projectID),
+  tasks,
+  me,
+  doneStatus,
+  firstStatus,
+)
 
 const collapsedStatuses = reactive<Record<string, boolean>>({
   done: true,
@@ -97,23 +103,16 @@ function openTask(taskID: string) {
 
 const accessError = useAccessError(isError, error, 'project')
 
-const sortLabel = computed(() => sortMode.value === 'dueDate' ? 'Due date' : 'Manual')
+const sortLabel = computed(() => (sortMode.value === 'dueDate' ? 'Due date' : 'Manual'))
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
     <LoadingState v-if="isLoading" message="Loading tasks…" />
 
-    <ErrorAlert
-      v-else-if="accessError"
-      :title="accessError.title"
-      :message="accessError.message"
-    />
+    <ErrorAlert v-else-if="accessError" :title="accessError.title" :message="accessError.message" />
 
-    <div
-      v-else
-      class="flex flex-col gap-4"
-    >
+    <div v-else class="flex flex-col gap-4">
       <TaskListToolbar
         :filtered-count="filteredTasks.length"
         :has-active-filters="hasActiveFilters"
@@ -148,10 +147,7 @@ const sortLabel = computed(() => sortMode.value === 'dueDate' ? 'Due date' : 'Ma
       </div>
 
       <div v-else class="flex flex-col gap-6">
-        <div
-          v-for="group in groupedTasks"
-          :key="group.status"
-        >
+        <div v-for="group in groupedTasks" :key="group.status">
           <TaskGroup
             :status="group.status"
             :tasks="group.tasks"
@@ -177,17 +173,9 @@ const sortLabel = computed(() => sortMode.value === 'dueDate' ? 'Due date' : 'Ma
           />
         </div>
 
-        <EmptyState
-          v-if="groupedTasks.length === 0 && project"
-          message="No tasks yet."
-        >
+        <EmptyState v-if="groupedTasks.length === 0 && project" message="No tasks yet.">
           <template #action>
-            <p
-              v-if="canModify"
-              class="mt-1 text-xs"
-            >
-              Create your first task to get started.
-            </p>
+            <p v-if="canModify" class="mt-1 text-xs">Create your first task to get started.</p>
           </template>
         </EmptyState>
       </div>

@@ -34,13 +34,20 @@ describe('createResourceMutation', () => {
     mocks.removeQueries.mockReset()
     mocks.useMutationMock.mockReset()
     mocks.showErrorToast.mockReset()
-    mocks.useMutationMock.mockImplementation((opts: UseMutationOptions<unknown, Error, unknown>) => opts)
+    mocks.useMutationMock.mockImplementation(
+      (opts: UseMutationOptions<unknown, Error, unknown>) => opts,
+    )
   })
 
   it('passes mutationFn through to useMutation', async () => {
-    const mutationFn = vi.fn<(v: { id: string }) => Promise<{ ok: string }>>(async (v) => ({ ok: v.id }))
+    const mutationFn = vi.fn<(v: { id: string }) => Promise<{ ok: string }>>(async (v) => ({
+      ok: v.id,
+    }))
     createResourceMutation({ mutationFn, errorMessage: 'boom' })
-    const opts = mocks.useMutationMock.mock.calls[0]![0] as unknown as CapturedMutationOptions<{ ok: string }, { id: string }>
+    const opts = mocks.useMutationMock.mock.calls[0]![0] as unknown as CapturedMutationOptions<
+      { ok: string },
+      { id: string }
+    >
     const data = await opts.mutationFn!({ id: 'x' })
 
     expect(mutationFn).toHaveBeenCalledWith({ id: 'x' })
@@ -54,7 +61,10 @@ describe('createResourceMutation', () => {
       invalidate: () => [['projects'], ['tasks', 'x']],
       remove: () => [['projects', 'x']],
     })
-    const opts = mocks.useMutationMock.mock.calls[0]![0] as unknown as CapturedMutationOptions<{ id: string }, unknown>
+    const opts = mocks.useMutationMock.mock.calls[0]![0] as unknown as CapturedMutationOptions<
+      { id: string },
+      unknown
+    >
 
     opts.onSuccess?.({ id: 'x' }, undefined, undefined, undefined)
 
@@ -64,13 +74,17 @@ describe('createResourceMutation', () => {
   })
 
   it('calls custom onSuccess with queryClient', () => {
-    const onSuccess = vi.fn<(data: { id: string }, variables: { v: number }, qc: QueryClient) => void>()
+    const onSuccess =
+      vi.fn<(data: { id: string }, variables: { v: number }, qc: QueryClient) => void>()
     createResourceMutation({
       mutationFn: async () => ({ id: 'x' }),
       errorMessage: 'boom',
       onSuccess,
     })
-    const opts = mocks.useMutationMock.mock.calls[0]![0] as unknown as CapturedMutationOptions<{ id: string }, { v: number }>
+    const opts = mocks.useMutationMock.mock.calls[0]![0] as unknown as CapturedMutationOptions<
+      { id: string },
+      { v: number }
+    >
 
     opts.onSuccess?.({ id: 'x' }, { v: 1 }, undefined, undefined)
 
@@ -89,7 +103,10 @@ describe('createResourceMutation', () => {
       errorMessage: 'Could not save',
     })
     const error = new Error('nope')
-    const opts = mocks.useMutationMock.mock.calls[0]![0] as unknown as CapturedMutationOptions<{ ok: boolean }, unknown>
+    const opts = mocks.useMutationMock.mock.calls[0]![0] as unknown as CapturedMutationOptions<
+      { ok: boolean },
+      unknown
+    >
 
     opts.onError?.(error, undefined, undefined, undefined)
 

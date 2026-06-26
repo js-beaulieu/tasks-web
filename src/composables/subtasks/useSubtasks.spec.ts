@@ -29,7 +29,15 @@ describe('useSubtasks', () => {
 
   it('fetches subtasks when parentTaskID is provided', async () => {
     seedMockData({
-      tasks: [makeApiTask({ id: 's1', project_id: 'p1', parent_id: 't1', name: 'Sub task', owner_id: 'u1' })],
+      tasks: [
+        makeApiTask({
+          id: 's1',
+          project_id: 'p1',
+          parent_id: 't1',
+          name: 'Sub task',
+          owner_id: 'u1',
+        }),
+      ],
     })
 
     const parentTaskID = ref<string | undefined>('t1')

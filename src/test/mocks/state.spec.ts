@@ -14,7 +14,17 @@ describe('defaultSeed', () => {
   })
 
   it('seedMockData still applies seed without caller-side clone', () => {
-    seedMockData({ projects: [{ id: 'p2', name: 'Other', owner_id: 'dev-user', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-02T00:00:00Z' }] })
+    seedMockData({
+      projects: [
+        {
+          id: 'p2',
+          name: 'Other',
+          owner_id: 'dev-user',
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-02T00:00:00Z',
+        },
+      ],
+    })
     const data = getMockData()
     expect(data.projects[0]?.id).toBe('p2')
     resetMockData()

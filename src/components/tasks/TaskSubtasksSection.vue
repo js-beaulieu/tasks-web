@@ -103,7 +103,12 @@ function confirmConvert() {
       projectID: props.projectID,
       oldParentID: props.task.parentId,
     },
-    { onSuccess: () => { showConvertPicker.value = false; selectedParent.value = '' } },
+    {
+      onSuccess: () => {
+        showConvertPicker.value = false
+        selectedParent.value = ''
+      },
+    },
   )
 }
 
@@ -122,11 +127,7 @@ function detach() {
     <div class="flex items-center gap-1.5 text-sm font-medium">
       <CornerDownRight class="size-3.5 text-muted-foreground" />
       Subtasks
-      <Badge
-        v-if="(subtasks?.length ?? 0) > 0"
-        variant="secondary"
-        class="text-xs"
-      >
+      <Badge v-if="(subtasks?.length ?? 0) > 0" variant="secondary" class="text-xs">
         {{ subtasks!.length }}
       </Badge>
     </div>
@@ -146,12 +147,7 @@ function detach() {
       </div>
     </div>
 
-    <p
-      v-else
-      class="text-xs text-muted-foreground"
-    >
-      No subtasks.
-    </p>
+    <p v-else class="text-xs text-muted-foreground">No subtasks.</p>
 
     <div v-if="canModify" class="flex flex-col gap-2">
       <div class="flex items-center gap-1">
@@ -160,13 +156,13 @@ function detach() {
           placeholder="Add subtask…"
           class="h-8 text-sm"
           :data-testid="'subtask-name-input'"
-          @keydown="(e: KeyboardEvent) => { if (e.key === 'Enter') submitSubtask() }"
+          @keydown="
+            (e: KeyboardEvent) => {
+              if (e.key === 'Enter') submitSubtask()
+            }
+          "
         />
-        <StatusSelect
-          v-model="newSubtaskStatus"
-          :statuses="statuses"
-          placeholder="Status"
-        />
+        <StatusSelect v-model="newSubtaskStatus" :statuses="statuses" placeholder="Status" />
         <Button
           size="sm"
           class="h-8 shrink-0"
@@ -200,11 +196,7 @@ function detach() {
               <SelectValue placeholder="Select parent task" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem
-                v-for="opt in parentOptions"
-                :key="opt.value"
-                :value="opt.value"
-              >
+              <SelectItem v-for="opt in parentOptions" :key="opt.value" :value="opt.value">
                 {{ opt.label }}
               </SelectItem>
             </SelectContent>
@@ -219,12 +211,7 @@ function detach() {
             <Loader2 v-if="convertMutation.isPending.value" class="size-4 animate-spin" />
             Confirm
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            class="h-8 shrink-0"
-            @click="cancelConvert"
-          >
+          <Button variant="ghost" size="sm" class="h-8 shrink-0" @click="cancelConvert">
             Cancel
           </Button>
         </template>
