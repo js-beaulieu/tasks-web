@@ -7,7 +7,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "preview": "turbo run preview",
-    "test:unit": "turbo run test:unit",
+    "test:unit": "turbo run test:unit --",
     "test:e2e": "pnpm --filter @hs/web-tasks test:e2e",
     "build-only": "turbo run build-only",
     "typecheck": "turbo run typecheck",
