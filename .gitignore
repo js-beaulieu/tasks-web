@@ -30,6 +30,7 @@ coverage
 
 # Turbo
 turbo*
+.turbo/
 
 # Cypress
 /cypress/videos/
@@ -43,3 +44,4 @@ __screenshots__/
 
 test-results/
 playwright-report/
+turbo/
