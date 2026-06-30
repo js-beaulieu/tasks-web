@@ -1,6 +1,6 @@
-# .
+# @hs/web-tasks
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 + Vite + TypeScript browser client for the tasks app, served through the gateway.
 
 ## Recommended IDE Setup
 
@@ -31,7 +31,7 @@ pnpm install
 
 ### Compile and Hot-Reload for Development
 
-Start the local API (Postgres + `tasks-api:latest` Docker container):
+Start the local API (Postgres + `ghcr.io/js-beaulieu/hs-api-tasks:latest` Docker container):
 
 ```sh
 pnpm dev:api

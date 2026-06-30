@@ -28,6 +28,9 @@ coverage
 
 .eslintcache
 
+# Turbo
+turbo*
+
 # Cypress
 /cypress/videos/
 /cypress/screenshots/

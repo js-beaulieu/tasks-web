@@ -63,7 +63,7 @@ export default defineConfig({
      * Use the preview server on CI for more realistic testing.
      * Playwright will re-use the local server if there is already a dev-server running.
      */
-    command: process.env.CI ? 'pnpm preview --host 0.0.0.0 --port 4173' : 'pnpm dev',
+    command: process.env.CI ? 'pnpm --filter @hs/web-tasks preview --host 0.0.0.0 --port 4173' : 'pnpm --filter @hs/web-tasks dev',
     port: process.env.CI ? 4173 : 5173,
     reuseExistingServer: !process.env.CI,
     timeout: 30 * 1000,

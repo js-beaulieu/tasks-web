@@ -14,7 +14,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@hs/web-shared": ["../../packages/web-shared/src/index.ts"]
     },
     "ignoreDeprecations": "6.0"
   }

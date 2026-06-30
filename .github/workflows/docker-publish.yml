@@ -22,9 +22,10 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
+          file: apps/tasks/Dockerfile
           push: true
           build-args: DOMAIN=${{ secrets.DOMAIN }}
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/js-beaulieu/hs-app-tasks:latest
 
       - name: Trigger Watchtower update
         run: |

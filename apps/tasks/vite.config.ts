@@ -10,6 +10,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@hs/web-shared': fileURLToPath(new URL('../../packages/web-shared/src', import.meta.url)),
     },
   },
   server: {
@@ -20,7 +21,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ''),
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq) => {
-            // Dev identity headers so tasks-api can auto-create a local user
+            // Dev identity headers so hs-api-tasks can auto-create a local user
             // without the full home-stack gateway.
             proxyReq.setHeader('X-User-ID', 'dev-user')
             proxyReq.setHeader('X-User-Name', 'Dev User')
