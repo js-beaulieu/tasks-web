@@ -56,7 +56,7 @@ export const useUIStore = defineStore(
   },
   {
     persist: {
-      key: 'tasks-web-ui',
+      key: 'hs-web-tasks-ui',
       pick: ['sortMode', 'viewMode', 'theme'],
     },
   } as { persist: PersistenceOptions },

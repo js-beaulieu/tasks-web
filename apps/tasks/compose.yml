@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: tasks-web-postgres
+    container_name: hs-web-tasks-postgres
     environment:
       POSTGRES_DB: tasks_api
       POSTGRES_USER: postgres
@@ -14,14 +14,14 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - tasks-api
+      - hs-api-tasks
 
-  tasks-api:
+  hs-api-tasks:
     build:
-      context: ../tasks-api
+      context: ../hs-api/api/tasks
       dockerfile: Dockerfile
-    image: tasks-api:latest
-    container_name: tasks-web-tasks-api
+    image: ghcr.io/js-beaulieu/hs-api-tasks:latest
+    container_name: hs-web-tasks-hs-api-tasks
     ports:
       - "8080:8080"
     environment:
@@ -32,10 +32,10 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - tasks-api
+      - hs-api-tasks
 
 volumes:
   tasks_api_postgres_data:
 
 networks:
-  tasks-api:
+  hs-api-tasks:

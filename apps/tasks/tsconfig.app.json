@@ -9,7 +9,8 @@
     // Path mapping for cleaner imports.
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@hs/web-shared": ["../../packages/web-shared/src/index.ts"]
     },
 
     // Silence TypeScript 6 deprecation for baseUrl until project tooling migrates.

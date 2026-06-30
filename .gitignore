@@ -28,6 +28,9 @@ coverage
 
 .eslintcache
 
+# Turbo
+.turbo/
+
 # Cypress
 /cypress/videos/
 /cypress/screenshots/
@@ -40,3 +43,4 @@ __screenshots__/
 
 test-results/
 playwright-report/
+turbo/
