@@ -29,7 +29,6 @@ coverage
 .eslintcache
 
 # Turbo
-turbo*
 .turbo/
 
 # Cypress
